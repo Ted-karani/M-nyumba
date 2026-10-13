@@ -63,6 +63,23 @@ class Property(Base):
     units = relationship("Unit", back_populates="building")
 
 
+# This class is the "property_caretakers" table. Each row says "this caretaker looks after this property".
+class PropertyCaretaker(Base):
+    # The name of the table inside the database
+    __tablename__ = "property_caretakers"
+    # Rule: the same caretaker cannot be assigned to the same property twice
+    __table_args__ = (UniqueConstraint("property_id", "caretaker_id", name="one_assignment_per_caretaker_per_property"),)
+
+    # A unique number for each assignment, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The property being looked after (points to the properties table)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    # The caretaker looking after it (points to the users table)
+    caretaker_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # The date and time the assignment was made
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 # This class is the "units" table. Each house or room is one row.
 class Unit(Base):
     # The name of the table inside the database
