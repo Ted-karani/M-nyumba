@@ -1,7 +1,7 @@
-# Import the date and time tool so we can record when things happen
+# Import the date and time tools so we can record when things happen
 from datetime import datetime
-# Import the column types we need for the tables (now with UniqueConstraint too)
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, Text, ForeignKey, UniqueConstraint
+# Import the column types we need for the tables (now with Date too)
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Float, Text, ForeignKey, UniqueConstraint
 # Import "relationship", which lets one table reach into another easily
 from sqlalchemy.orm import relationship
 # Import the Base class from our database file
@@ -95,3 +95,67 @@ class Unit(Base):
 
     # Lets us write unit.building to get the property this unit is inside
     building = relationship("Property", back_populates="units")
+    # Lets us write unit.leases to get every stay this unit has ever had
+    leases = relationship("Lease", back_populates="unit")
+
+
+# This class is the "tenants" table. Each person who rents is one row.
+class Tenant(Base):
+    # The name of the table inside the database
+    __tablename__ = "tenants"
+
+    # A unique number for each tenant, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The id of the owner this tenant belongs to (so landlords only see their own tenants)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # The tenant's full name (required)
+    full_name = Column(String, nullable=False)
+    # The tenant's phone number, used for reminders and M-Pesa matching later (required)
+    phone = Column(String, nullable=False)
+    # The tenant's email (optional)
+    email = Column(String, nullable=True)
+    # The tenant's national ID number (we will encrypt this later in Phase 4)
+    id_number = Column(String, nullable=True)
+    # The name of someone to call in an emergency
+    emergency_contact_name = Column(String, nullable=True)
+    # That person's phone number
+    emergency_contact_phone = Column(String, nullable=True)
+    # Any extra notes about the tenant
+    notes = Column(Text, nullable=True)
+    # The date and time the tenant was added
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Lets us write tenant.leases to get every stay this tenant has had
+    leases = relationship("Lease", back_populates="tenant")
+
+
+# This class is the "leases" table. Each stay (one tenant in one unit) is one row.
+class Lease(Base):
+    # The name of the table inside the database
+    __tablename__ = "leases"
+
+    # A unique number for each lease, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The unit being rented (points to the units table)
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=False)
+    # The person renting it (points to the tenants table)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    # The day the tenant moves in
+    start_date = Column(Date, nullable=False)
+    # The day the tenant is leaving (empty if they have not given a date)
+    end_date = Column(Date, nullable=True)
+    # The monthly rent agreed for this stay (copied from the unit, so later rent changes do not affect it)
+    rent_amount = Column(Integer, nullable=False)
+    # The deposit agreed for this stay
+    deposit_amount = Column(Integer, nullable=False, default=0)
+    # The lease status: "active" or "ended"
+    status = Column(String, nullable=False, default="active")
+    # Any extra notes about this lease
+    notes = Column(Text, nullable=True)
+    # The date and time the lease was created
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Lets us write lease.unit to get the unit being rented
+    unit = relationship("Unit", back_populates="leases")
+    # Lets us write lease.tenant to get the person renting it
+    tenant = relationship("Tenant", back_populates="leases")
