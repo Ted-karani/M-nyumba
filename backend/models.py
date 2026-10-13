@@ -1,6 +1,6 @@
 # Import the date and time tools so we can record when things happen
 from datetime import datetime
-# Import the column types we need for the tables (now with Date too)
+# Import the column types we need for the tables
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Float, Text, ForeignKey, UniqueConstraint
 # Import "relationship", which lets one table reach into another easily
 from sqlalchemy.orm import relationship
@@ -159,3 +159,63 @@ class Lease(Base):
     unit = relationship("Unit", back_populates="leases")
     # Lets us write lease.tenant to get the person renting it
     tenant = relationship("Tenant", back_populates="leases")
+    # Lets us write lease.charges to get everything this tenant has been billed
+    charges = relationship("Charge", back_populates="lease")
+    # Lets us write lease.payments to get everything this tenant has paid
+    payments = relationship("Payment", back_populates="lease")
+
+
+# This class is the "charges" table. Each amount a tenant owes is one row.
+class Charge(Base):
+    # The name of the table inside the database
+    __tablename__ = "charges"
+
+    # A unique number for each charge, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The lease this charge belongs to (points to the leases table)
+    lease_id = Column(Integer, ForeignKey("leases.id"), nullable=False)
+    # What the charge is for: "rent", "deposit", "water", "wifi", "electricity", or "other"
+    charge_type = Column(String, nullable=False)
+    # The amount owed in shillings
+    amount = Column(Integer, nullable=False)
+    # The month this charge is for, written like "2026-10" (optional, e.g. a deposit has none)
+    period = Column(String, nullable=True)
+    # The date the money must be paid by
+    due_date = Column(Date, nullable=False)
+    # A short note, like "October rent" or "Water: 12 units"
+    description = Column(String, nullable=True)
+    # The date and time the charge was created
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Lets us write charge.lease to get the lease this charge belongs to
+    lease = relationship("Lease", back_populates="charges")
+
+
+# This class is the "payments" table. Each payment received is one row.
+class Payment(Base):
+    # The name of the table inside the database
+    __tablename__ = "payments"
+
+    # A unique number for each payment, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The lease this payment belongs to (points to the leases table)
+    lease_id = Column(Integer, ForeignKey("leases.id"), nullable=False)
+    # The amount paid in shillings
+    amount = Column(Integer, nullable=False)
+    # The date the money was received
+    paid_on = Column(Date, nullable=False)
+    # How it was paid: "mpesa", "cash", or "bank"
+    method = Column(String, nullable=False, default="mpesa")
+    # The M-Pesa code (like SJK4L2M9QP). No two payments can share the same code.
+    reference = Column(String, unique=True, nullable=True)
+    # The id of the user who recorded this payment (owner or caretaker)
+    recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    # Any extra notes about this payment
+    notes = Column(Text, nullable=True)
+    # The date and time the payment was recorded
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Lets us write payment.lease to get the lease this payment belongs to
+    lease = relationship("Lease", back_populates="payments")
+    # Lets us write payment.recorded_by to get the user who entered it
+    recorded_by = relationship("User")
