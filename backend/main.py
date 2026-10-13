@@ -12,8 +12,8 @@ import models
 import schemas
 import security
 from dependencies import get_db, get_current_user
-# Import the properties endpoints
-from routers import properties
+# Import the endpoints for properties, units, and tenants
+from routers import properties, units, tenants
 
 # Create all the tables in the database if they don't exist yet
 Base.metadata.create_all(bind=engine)
@@ -23,6 +23,10 @@ app = FastAPI(title="M-nyumba")
 
 # Plug in the properties endpoints
 app.include_router(properties.router)
+# Plug in the units endpoints
+app.include_router(units.router)
+# Plug in the tenants endpoints
+app.include_router(tenants.router)
 
 
 # When someone visits the home address "/", send a simple message
