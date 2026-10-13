@@ -1,18 +1,19 @@
 # Import FastAPI tools for building the app and handling errors
 from fastapi import FastAPI, Depends, HTTPException
-# Import the tools that handle login forms and tokens
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+# Import the tool that handles login forms
+from fastapi.security import OAuth2PasswordRequestForm
 # Import the database session type
 from sqlalchemy.orm import Session
-# Import jwt so we can read tokens
-import jwt
 
 # Import our database tools
-from database import engine, Base, SessionLocal
+from database import engine, Base
 # Import our own files
 import models
 import schemas
 import security
+from dependencies import get_db, get_current_user
+# Import the properties endpoints
+from routers import properties
 
 # Create all the tables in the database if they don't exist yet
 Base.metadata.create_all(bind=engine)
@@ -20,45 +21,8 @@ Base.metadata.create_all(bind=engine)
 # Create the app and give it a name
 app = FastAPI(title="M-nyumba")
 
-# Tell FastAPI where users log in to get a token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-
-# Give each request its own database session, and close it when done
-def get_db():
-    # Open a new session
-    db = SessionLocal()
-    try:
-        # Hand it to the endpoint that needs it
-        yield db
-    finally:
-        # Always close it afterwards
-        db.close()
-
-
-# Work out which user is making the request by reading their token
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    # The error we send if anything is wrong with the token
-    error = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        # Open the token and read what is inside
-        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
-        # Get the user id stored inside the token
-        user_id = int(payload["sub"])
-    except (jwt.PyJWTError, KeyError, ValueError):
-        # The token is fake, expired, or damaged
-        raise error
-    # Find that user in the database
-    user = db.get(models.User, user_id)
-    # Reject the request if the user is missing or switched off
-    if user is None or not user.is_active:
-        raise error
-    # Return the user so the endpoint knows who is asking
-    return user
+# Plug in the properties endpoints
+app.include_router(properties.router)
 
 
 # When someone visits the home address "/", send a simple message
