@@ -1,3 +1,5 @@
+# Import the tool that checks text patterns
+import re
 # Import the date and time tools
 from datetime import date, datetime
 # Import the tool that lets us list allowed values
@@ -27,6 +29,10 @@ def clean_phone(value: str) -> str:
         raise ValueError("Enter a valid Kenyan phone number, like 0712345678")
     # Send back the cleaned number
     return digits
+
+
+# The shape every M-Pesa code has: 10 capital letters or numbers
+MPESA_CODE = re.compile(r"^[A-Z0-9]{10}$")
 
 
 # The data we ask for when someone registers
@@ -356,3 +362,117 @@ class LeaseOut(BaseModel):
     total_paid: int
     # What the tenant still owes (charged minus paid)
     balance: int
+
+
+# The data we ask for when adding a charge (something the tenant owes)
+class ChargeCreate(BaseModel):
+    # What the charge is for
+    charge_type: Literal["rent", "deposit", "water", "wifi", "electricity", "other"]
+    # The amount owed in shillings (must be more than zero)
+    amount: int = Field(gt=0)
+    # The month it is for, written like 2026-11 (required for rent)
+    period: str | None = Field(default=None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
+    # The date it must be paid by, written like 2026-11-05
+    due_date: date
+    # A short note, like "Water: 12 units" (optional)
+    description: str | None = None
+
+    # Rent charges must say which month they are for
+    @model_validator(mode="after")
+    def check_rent_period(self):
+        # A rent charge with no month is not allowed
+        if self.charge_type == "rent" and self.period is None:
+            raise ValueError("Rent charges need a period, like 2026-11")
+        # Everything is fine
+        return self
+
+
+# The data we send back about a charge
+class ChargeOut(BaseModel):
+    # The charge's id
+    id: int
+    # The lease it belongs to
+    lease_id: int
+    # What it is for
+    charge_type: str
+    # The amount owed
+    amount: int
+    # The month it is for
+    period: str | None
+    # The date it must be paid by
+    due_date: date
+    # A short note
+    description: str | None
+    # When it was created
+    created_at: datetime
+
+    # Lets this class read data straight from our database objects
+    model_config = {"from_attributes": True}
+
+
+# The same as ChargeOut, plus the tenant's new balance (sent after adding a charge)
+class ChargeCreatedOut(ChargeOut):
+    # What the tenant owes after this charge
+    lease_balance: int
+
+
+# The data we ask for when recording a payment
+class PaymentCreate(BaseModel):
+    # The amount paid in shillings (must be more than zero)
+    amount: int = Field(gt=0)
+    # The date the money was received, written like 2026-10-14
+    paid_on: date
+    # How it was paid
+    method: Literal["mpesa", "cash", "bank"] = "mpesa"
+    # The M-Pesa code (required for M-Pesa), or a bank or receipt reference
+    reference: str | None = None
+    # Extra notes (optional)
+    notes: str | None = None
+
+    # Check the payment makes sense before we save it
+    @model_validator(mode="after")
+    def check_payment(self):
+        # Clean up the reference: remove spaces and make it capitals
+        if self.reference is not None:
+            cleaned = self.reference.strip().upper()
+            self.reference = cleaned or None
+        # M-Pesa payments must have a proper 10-character code
+        if self.method == "mpesa":
+            if self.reference is None or not MPESA_CODE.match(self.reference):
+                raise ValueError("M-Pesa payments need the 10-character M-Pesa code, like SJK4L2M9QP")
+        # A payment cannot be dated in the future
+        if self.paid_on > date.today():
+            raise ValueError("The payment date cannot be in the future")
+        # Everything is fine
+        return self
+
+
+# The data we send back about a payment
+class PaymentOut(BaseModel):
+    # The payment's id
+    id: int
+    # The lease it belongs to
+    lease_id: int
+    # The amount paid
+    amount: int
+    # The date the money was received
+    paid_on: date
+    # How it was paid
+    method: str
+    # The M-Pesa code or other reference
+    reference: str | None
+    # The id of the user who recorded it
+    recorded_by_id: int | None
+    # Extra notes
+    notes: str | None
+    # When it was recorded
+    created_at: datetime
+
+    # Lets this class read data straight from our database objects
+    model_config = {"from_attributes": True}
+
+
+# The same as PaymentOut, plus the tenant's new balance (sent after recording a payment)
+class PaymentCreatedOut(PaymentOut):
+    # What the tenant still owes after this payment
+    lease_balance: int
