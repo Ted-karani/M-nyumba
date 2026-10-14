@@ -1,9 +1,9 @@
-# Import the date and time tool
-from datetime import datetime
+# Import the date and time tools
+from datetime import date, datetime
 # Import the tool that lets us list allowed values
 from typing import Literal
 # Import tools to describe and check data shapes
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
 # Turn any Kenyan phone number into the 254712345678 format
@@ -279,3 +279,80 @@ class TenantOut(BaseModel):
 
     # Lets this class read data straight from our database objects
     model_config = {"from_attributes": True}
+
+
+# The data we ask for when moving a tenant into a unit
+class LeaseCreate(BaseModel):
+    # The unit being rented
+    unit_id: int
+    # The tenant moving in
+    tenant_id: int
+    # The move-in date, written like 2026-10-14
+    start_date: date
+    # The planned leaving date (optional)
+    end_date: date | None = None
+    # Monthly rent for this stay (optional, defaults to the unit's rent)
+    rent_amount: int | None = Field(default=None, ge=0)
+    # Deposit for this stay (optional, defaults to the unit's deposit)
+    deposit_amount: int | None = Field(default=None, ge=0)
+    # Extra notes (optional)
+    notes: str | None = None
+
+    # Make sure the leaving date is not before the move-in date
+    @model_validator(mode="after")
+    def check_dates(self):
+        # Only check when a leaving date was given
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("The leaving date cannot be before the move-in date")
+        # Everything is fine
+        return self
+
+
+# The data we accept when editing an active lease (send only what changed)
+class LeaseUpdate(BaseModel):
+    # New planned leaving date (optional)
+    end_date: date | None = None
+    # New monthly rent (optional, only affects charges created from now on)
+    rent_amount: int | None = Field(default=None, ge=0)
+    # New notes (optional)
+    notes: str | None = None
+
+
+# The data we accept when ending a lease
+class LeaseEnd(BaseModel):
+    # The day the tenant left (optional, defaults to today)
+    end_date: date | None = None
+
+
+# The data we send back about a lease
+class LeaseOut(BaseModel):
+    # The lease's id
+    id: int
+    # The unit being rented
+    unit_id: int
+    # The unit's number, like "A1" (so you do not need a second request)
+    unit_number: str
+    # The tenant renting it
+    tenant_id: int
+    # The tenant's name (so you do not need a second request)
+    tenant_name: str
+    # The move-in date
+    start_date: date
+    # The leaving date
+    end_date: date | None
+    # Monthly rent for this stay
+    rent_amount: int
+    # Deposit for this stay
+    deposit_amount: int
+    # The status: "active" or "ended"
+    status: str
+    # Extra notes
+    notes: str | None
+    # When the lease was created
+    created_at: datetime
+    # Everything the tenant has been billed so far
+    total_charged: int
+    # Everything the tenant has paid so far
+    total_paid: int
+    # What the tenant still owes (charged minus paid)
+    balance: int
