@@ -45,6 +45,13 @@ async function request(path, options = {}) {
     throw new Error('Cannot reach the server. Is the backend running?')
   }
 
+  // If our saved token was rejected, it has expired, so go back to the login screen
+  if (response.status === 401 && token && path !== '/auth/login') {
+    clearToken()
+    window.location.reload()
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+
   // "204" means success with nothing to send back
   if (response.status === 204) return null
 
@@ -80,3 +87,6 @@ export function register(form) {
 
 // Get the details of whoever is logged in
 export const getMe = () => request('/auth/me')
+
+// Get all the numbers for the dashboard
+export const getDashboard = () => request('/dashboard')
