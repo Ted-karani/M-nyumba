@@ -12,8 +12,8 @@ import models
 import schemas
 import security
 from dependencies import get_db, get_current_user
-# Import the endpoints for properties, units, tenants, leases, and billing
-from routers import properties, units, tenants, leases, billing
+# Import the endpoints for properties, units, tenants, leases, billing, and the dashboard
+from routers import properties, units, tenants, leases, billing, dashboard
 
 # Create all the tables in the database if they don't exist yet
 Base.metadata.create_all(bind=engine)
@@ -31,6 +31,8 @@ app.include_router(tenants.router)
 app.include_router(leases.router)
 # Plug in the charges and payments endpoints
 app.include_router(billing.router)
+# Plug in the dashboard endpoint
+app.include_router(dashboard.router)
 
 
 # When someone visits the home address "/", send a simple message
