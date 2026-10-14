@@ -119,11 +119,57 @@ export const updateUnit = (id, data) => sendJson('PUT', `/units/${id}`, data)
 // Delete a unit
 export const deleteUnit = (id) => request(`/units/${id}`, { method: 'DELETE' })
 
+// Get every property together with all of its units (each unit also carries its property's name)
+export async function getUnitDirectory() {
+  // First get the list of properties
+  const dashboard = await getDashboard()
+  // Then get the units of every property at the same time
+  const lists = await Promise.all(
+    dashboard.properties.map((prop) =>
+      getUnits(prop.property_id).then((units) => units.map((unit) => ({ ...unit, property_name: prop.name })))
+    )
+  )
+  // Send back the properties and one flat list of all units
+  return { properties: dashboard.properties, units: lists.flat() }
+}
+
+// ---------- TENANTS ----------
+
+// Get all of this landlord's tenants
+export const getTenants = () => request('/tenants')
+// Get one tenant
+export const getTenant = (id) => request(`/tenants/${id}`)
+// Add a tenant
+export const createTenant = (data) => sendJson('POST', '/tenants', data)
+// Edit a tenant
+export const updateTenant = (id, data) => sendJson('PUT', `/tenants/${id}`, data)
+// Delete a tenant
+export const deleteTenant = (id) => request(`/tenants/${id}`, { method: 'DELETE' })
+
 // ---------- LEASES ----------
 
-// Get leases, optionally filtered, like getLeases({ property_id: 1, status: 'active' })
+// Get leases, optionally filtered, like getLeases({ tenant_id: 1, status: 'active' })
 export function getLeases(filters = {}) {
-  // Turn the filters into the "?property_id=1&status=active" part of the address
+  // Turn the filters into the "?tenant_id=1&status=active" part of the address
   const query = new URLSearchParams(filters).toString()
   return request(`/leases${query ? `?${query}` : ''}`)
 }
+// Move a tenant into a unit
+export const createLease = (data) => sendJson('POST', '/leases', data)
+// End a lease: the tenant leaves and the unit becomes vacant (no date means today)
+export const endLease = (id, data = {}) => sendJson('POST', `/leases/${id}/end`, data)
+
+// ---------- CHARGES AND PAYMENTS ----------
+
+// Get the charges on a lease
+export const getCharges = (leaseId) => request(`/leases/${leaseId}/charges`)
+// Add a charge to a lease
+export const createCharge = (leaseId, data) => sendJson('POST', `/leases/${leaseId}/charges`, data)
+// Delete a charge
+export const deleteCharge = (id) => request(`/charges/${id}`, { method: 'DELETE' })
+// Get the payments on a lease
+export const getPayments = (leaseId) => request(`/leases/${leaseId}/payments`)
+// Record a payment on a lease
+export const createPayment = (leaseId, data) => sendJson('POST', `/leases/${leaseId}/payments`, data)
+// Delete a payment
+export const deletePayment = (id) => request(`/payments/${id}`, { method: 'DELETE' })

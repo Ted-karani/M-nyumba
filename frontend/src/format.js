@@ -18,3 +18,63 @@ export function whatsappLink(phone, message) {
   // Our saved phone numbers are already in the 254... format that WhatsApp needs
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 }
+
+// Today's date as "2026-10-14", using the phone's own clock and time zone
+export function todayISO() {
+  // The current date and time
+  const now = new Date()
+  // Month and day need a zero in front when they are a single digit
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  // Put the three parts together
+  return `${now.getFullYear()}-${month}-${day}`
+}
+
+// This month as "2026-10"
+export function currentPeriod() {
+  return todayISO().slice(0, 7)
+}
+
+// The month after a given one: "2026-10" becomes "2026-11" (and "2026-12" becomes "2027-01")
+export function nextPeriod(period) {
+  // Split "2026-10" into the year and the month number
+  const [year, month] = period.split('-').map(Number)
+  // JavaScript counts months from 0, so using the month number as-is gives the next month
+  const next = new Date(year, month, 1)
+  // Write it back as "YYYY-MM"
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+}
+
+// Show a saved phone number the way people write it: 254712345678 becomes "0712 345 678"
+export function phoneLocal(phone) {
+  // Nothing to show
+  if (!phone) return ''
+  // Swap the 254 at the front for a 0
+  const local = phone.startsWith('254') ? `0${phone.slice(3)}` : phone
+  // Add spaces so it is easy to read
+  if (local.length === 10) return `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}`
+  return local
+}
+
+// Get the first letters of a name, like "Grace Njeri" becomes "GN"
+export function initials(name) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('')
+}
+
+// The words we show for each kind of charge
+export const CHARGE_LABELS = {
+  rent: 'Rent',
+  deposit: 'Deposit',
+  water: 'Water',
+  wifi: 'Wi-Fi',
+  electricity: 'Electricity',
+  other: 'Other',
+}
+
+// The words we show for each way of paying
+export const METHOD_LABELS = { mpesa: 'M-Pesa', cash: 'Cash', bank: 'Bank' }
