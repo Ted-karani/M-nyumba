@@ -8,6 +8,8 @@ import { AuthProvider, useAuth } from './AuthContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Properties from './pages/Properties'
+import PropertyDetail from './pages/PropertyDetail'
 import ComingSoon from './pages/ComingSoon'
 
 // Decide which screen to show
@@ -29,7 +31,8 @@ function Screens() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
-        <Route path="properties" element={<ComingSoon title="Properties" />} />
+        <Route path="properties" element={<Properties />} />
+        <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="tenants" element={<ComingSoon title="Tenants" />} />
         <Route path="payments" element={<ComingSoon title="Payments" />} />
         {/* Any other address goes back to the dashboard */}

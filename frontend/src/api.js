@@ -69,6 +69,16 @@ async function request(path, options = {}) {
   return data
 }
 
+// Send data to the backend as JSON (used for creating and editing)
+const sendJson = (method, path, body) =>
+  request(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+// ---------- LOGIN ----------
+
 // Log in with email and password, and get a token back
 export function login(email, password) {
   // The login endpoint wants a form, with the email under the name "username"
@@ -77,16 +87,43 @@ export function login(email, password) {
 }
 
 // Create a new account
-export function register(form) {
-  return request('/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(form),
-  })
-}
+export const register = (form) => sendJson('POST', '/auth/register', form)
 
 // Get the details of whoever is logged in
 export const getMe = () => request('/auth/me')
 
+// ---------- DASHBOARD ----------
+
 // Get all the numbers for the dashboard
 export const getDashboard = () => request('/dashboard')
+
+// ---------- PROPERTIES ----------
+
+// Get one property
+export const getProperty = (id) => request(`/properties/${id}`)
+// Add a property
+export const createProperty = (data) => sendJson('POST', '/properties', data)
+// Edit a property
+export const updateProperty = (id, data) => sendJson('PUT', `/properties/${id}`, data)
+// Delete a property
+export const deleteProperty = (id) => request(`/properties/${id}`, { method: 'DELETE' })
+
+// ---------- UNITS ----------
+
+// Get all the units inside a property
+export const getUnits = (propertyId) => request(`/properties/${propertyId}/units`)
+// Add a unit inside a property
+export const createUnit = (propertyId, data) => sendJson('POST', `/properties/${propertyId}/units`, data)
+// Edit a unit
+export const updateUnit = (id, data) => sendJson('PUT', `/units/${id}`, data)
+// Delete a unit
+export const deleteUnit = (id) => request(`/units/${id}`, { method: 'DELETE' })
+
+// ---------- LEASES ----------
+
+// Get leases, optionally filtered, like getLeases({ property_id: 1, status: 'active' })
+export function getLeases(filters = {}) {
+  // Turn the filters into the "?property_id=1&status=active" part of the address
+  const query = new URLSearchParams(filters).toString()
+  return request(`/leases${query ? `?${query}` : ''}`)
+}
