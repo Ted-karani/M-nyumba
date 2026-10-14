@@ -1,0 +1,45 @@
+/* Load Tailwind */
+@import "tailwindcss";
+
+/* Our design system: colors and fonts, available as Tailwind classes */
+@theme {
+  /* The two fonts */
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+
+  /* Forest green: the main brand color, from darkest to lightest */
+  --color-forest-900: #0f2a20;
+  --color-forest-700: #1b4d3a;
+  --color-forest-500: #2f7d5b;
+  --color-forest-200: #bfe0cf;
+  --color-forest-100: #ddefe5;
+
+  /* Cream: the page background and card colors */
+  --color-cream: #f7f4ec;
+  --color-paper: #fffdf8;
+
+  /* Gold: the accent color for highlights */
+  --color-gold: #d9a441;
+
+  /* Status colors: vacant, overdue */
+  --color-amber: #e8a33d;
+  --color-terracotta: #c4533a;
+
+  /* Text colors */
+  --color-ink: #1d2b25;
+  --color-muted: #6b7a72;
+}
+
+/* Page defaults: cream background, dark green-black text, body font */
+body {
+  margin: 0;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings use the display font */
+h1, h2, h3 {
+  font-family: var(--font-display);
+}

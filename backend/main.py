@@ -1,5 +1,7 @@
 # Import FastAPI tools for building the app and handling errors
 from fastapi import FastAPI, Depends, HTTPException
+# Import the tool that lets our React app talk to this API
+from fastapi.middleware.cors import CORSMiddleware
 # Import the tool that handles login forms
 from fastapi.security import OAuth2PasswordRequestForm
 # Import the database session type
@@ -20,6 +22,19 @@ Base.metadata.create_all(bind=engine)
 
 # Create the app and give it a name
 app = FastAPI(title="M-nyumba")
+
+# Allow our React app (running on port 5173) to call this API
+app.add_middleware(
+    CORSMiddleware,
+    # The websites allowed to talk to us
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    # We use tokens in headers, not cookies, so this stays off
+    allow_credentials=False,
+    # Allow all request types (GET, POST, PUT, DELETE)
+    allow_methods=["*"],
+    # Allow all headers, including the Authorization header
+    allow_headers=["*"],
+)
 
 # Plug in the properties endpoints
 app.include_router(properties.router)
