@@ -9,10 +9,13 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
+  ChevronRight,
+  DoorOpen,
   MessageCircle,
   RefreshCw,
   TriangleAlert,
   Wallet,
+  Wrench,
 } from 'lucide-react'
 // Import our own files
 import { useAuth } from '../AuthContext'
@@ -36,9 +39,40 @@ function greeting() {
   return 'Good evening'
 }
 
+// Say how long ago something was reported, like "3 days ago"
+function age(createdAt) {
+  // The backend saves times in UTC without a "Z" on the end, so we add it
+  const created = new Date(createdAt.endsWith('Z') ? createdAt : `${createdAt}Z`)
+  // How many whole days have passed
+  const days = Math.floor((Date.now() - created.getTime()) / 86400000)
+  if (days <= 0) return 'Today'
+  if (days === 1) return '1 day ago'
+  return `${days} days ago`
+}
+
 // A grey pulsing box shown while the data loads
 function Skeleton({ className }) {
   return <div className={`animate-pulse rounded-3xl bg-forest-100 ${className}`} />
+}
+
+// The heading above each section, with an optional count and an optional "see all" link
+function SectionTitle({ icon: Icon, color, title, count, to, linkLabel }) {
+  return (
+    <motion.div variants={itemAnimation} className="mt-8 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <Icon size={20} className={color} />
+        <h2 className="text-xl font-bold text-forest-900">{title}</h2>
+        {count > 0 && (
+          <span className="rounded-full bg-forest-100 px-2.5 py-0.5 text-sm font-semibold text-forest-700">{count}</span>
+        )}
+      </div>
+      {to && (
+        <Link to={to} className="flex items-center gap-1 text-sm font-medium text-forest-700 hover:underline">
+          {linkLabel} <ChevronRight size={16} />
+        </Link>
+      )}
+    </motion.div>
+  )
 }
 
 // One overdue tenant, with a button to remind them on WhatsApp
@@ -158,8 +192,10 @@ export default function Dashboard() {
     )
   }
 
-  // Shortcut for the unit numbers
+  // Shortcuts for the unit numbers and the repairs
   const units = data.units
+  const repairs = data.repairs
+  const repairCount = repairs.open_count + repairs.in_progress_count
 
   return (
     <motion.div variants={listAnimation} initial="hidden" animate="show">
@@ -212,16 +248,7 @@ export default function Dashboard() {
       </div>
 
       {/* The overdue tenants */}
-      <motion.div variants={itemAnimation} className="mt-8 flex items-center gap-2">
-        <TriangleAlert size={20} className="text-terracotta" />
-        <h2 className="text-xl font-bold text-forest-900">Overdue</h2>
-        {data.overdue_count > 0 && (
-          <span className="rounded-full bg-terracotta/15 px-2.5 py-0.5 text-sm font-semibold text-terracotta">
-            {data.overdue_count}
-          </span>
-        )}
-      </motion.div>
-
+      <SectionTitle icon={TriangleAlert} color="text-terracotta" title="Overdue" count={data.overdue_count} />
       {data.overdue.length === 0 ? (
         // Nobody is late: show good news
         <motion.div
@@ -240,32 +267,124 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Leases ending soon */}
-      {data.ending_soon.length > 0 && (
-        <>
-          <motion.div variants={itemAnimation} className="mt-8 flex items-center gap-2">
-            <CalendarClock size={20} className="text-gold" />
-            <h2 className="text-xl font-bold text-forest-900">Leaving soon</h2>
-          </motion.div>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {data.ending_soon.map((item) => (
-              <motion.div
-                key={item.lease_id}
-                variants={itemAnimation}
-                className="flex items-center justify-between rounded-2xl bg-paper p-4 shadow-sm"
+      {/* The problems that need fixing */}
+      <SectionTitle
+        icon={Wrench}
+        color="text-amber"
+        title="Needs fixing"
+        count={repairCount}
+        to={repairCount > 0 ? '/repairs' : null}
+        linkLabel="See all"
+      />
+      {repairs.items.length === 0 ? (
+        <motion.div
+          variants={itemAnimation}
+          className="mt-3 flex items-center gap-3 rounded-2xl bg-forest-100 p-5 text-forest-700"
+        >
+          <CheckCircle2 size={22} />
+          <p className="font-medium">Nothing is broken right now.</p>
+        </motion.div>
+      ) : (
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          {repairs.items.map((repair) => (
+            <motion.div key={repair.id} variants={itemAnimation}>
+              {/* Each card opens the repairs page */}
+              <Link
+                to="/repairs"
+                className="block rounded-2xl bg-paper p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-semibold text-forest-900">{repair.title}</p>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      repair.status === 'in_progress' ? 'bg-gold/25 text-forest-900' : 'bg-amber/20 text-amber'
+                    }`}
+                  >
+                    {repair.status === 'in_progress' ? 'In progress' : 'Open'}
+                  </span>
+                </div>
+                <p className="mt-1 truncate text-sm text-muted">
+                  {repair.unit_number ? `Unit ${repair.unit_number}` : 'Whole property'} · {repair.property_name}
+                </p>
+                <div className="mt-2 flex items-center gap-2 text-xs text-muted">
+                  {repair.priority === 'urgent' && (
+                    <span className="rounded-full bg-terracotta/15 px-2 py-0.5 font-semibold text-terracotta">Urgent</span>
+                  )}
+                  <span>Reported {age(repair.created_at)}</span>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      )}
+      {/* If there are more problems than the cards show, say so */}
+      {repairCount > repairs.items.length && (
+        <motion.p variants={itemAnimation} className="mt-3 text-center text-sm text-muted">
+          Showing the {repairs.items.length} most pressing of {repairCount}.
+        </motion.p>
+      )}
+
+      {/* The empty units */}
+      <SectionTitle icon={DoorOpen} color="text-forest-500" title="Vacant units" count={units.vacant} />
+      {data.vacant_units.length === 0 ? (
+        <motion.div
+          variants={itemAnimation}
+          className="mt-3 flex items-center gap-3 rounded-2xl bg-forest-100 p-5 text-forest-700"
+        >
+          <CheckCircle2 size={22} />
+          <p className="font-medium">Every unit is occupied or under repair.</p>
+        </motion.div>
+      ) : (
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          {data.vacant_units.map((unit) => (
+            <motion.div key={unit.unit_id} variants={itemAnimation}>
+              {/* Each card opens the property it is in */}
+              <Link
+                to={`/properties/${unit.property_id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl bg-paper p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-forest-900">{item.tenant_name}</p>
+                  <p className="font-display text-lg font-bold text-forest-900">{unit.unit_number}</p>
                   <p className="truncate text-sm text-muted">
-                    {item.unit_number} · {item.property_name}
+                    {unit.unit_type ? `${unit.unit_type} · ` : ''}
+                    {unit.property_name}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-forest-900">{formatDate(item.end_date)}</p>
-                  <p className="text-xs text-muted">
-                    {item.days_left === 0 ? 'Today' : `in ${item.days_left} days`}
-                  </p>
+                  <p className="font-semibold text-forest-900">{money(unit.rent_amount)}</p>
+                  <p className="text-xs text-muted">per month</p>
                 </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Leases ending soon */}
+      {data.ending_soon.length > 0 && (
+        <>
+          <SectionTitle icon={CalendarClock} color="text-gold" title="Leaving soon" count={data.ending_soon.length} />
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {data.ending_soon.map((item) => (
+              <motion.div key={item.lease_id} variants={itemAnimation}>
+                {/* Each card opens the tenant's page */}
+                <Link
+                  to={`/tenants/${item.tenant_id}`}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-paper p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-forest-900">{item.tenant_name}</p>
+                    <p className="truncate text-sm text-muted">
+                      {item.unit_number} · {item.property_name}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-forest-900">{formatDate(item.end_date)}</p>
+                    <p className="text-xs text-muted">
+                      {item.days_left === 0 ? 'Today' : `in ${item.days_left} days`}
+                    </p>
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -273,11 +392,7 @@ export default function Dashboard() {
       )}
 
       {/* Each property */}
-      <motion.div variants={itemAnimation} className="mt-8 flex items-center gap-2">
-        <Building2 size={20} className="text-forest-500" />
-        <h2 className="text-xl font-bold text-forest-900">Your properties</h2>
-      </motion.div>
-
+      <SectionTitle icon={Building2} color="text-forest-500" title="Your properties" count={0} to="/properties" linkLabel="Manage" />
       {data.properties.length === 0 ? (
         // No properties yet
         <motion.p variants={itemAnimation} className="mt-3 rounded-2xl bg-paper p-5 text-muted shadow-sm">

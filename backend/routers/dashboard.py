@@ -1,6 +1,6 @@
 # Import tools to group data and work with dates
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 # Import FastAPI tools for building endpoints
 from fastapi import APIRouter, Depends, Query
 # Import the tool that describes data shapes
@@ -21,6 +21,9 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 DEFAULT_GRACE_DAYS = 5
 # SETTING: how many days ahead we look for leases that are ending
 ENDING_SOON_DAYS = 30
+# SETTING: how many repairs and vacant units the dashboard lists
+MAX_REPAIRS_SHOWN = 5
+MAX_VACANT_SHOWN = 50
 
 
 # The unit numbers for the whole business or for one property
@@ -79,6 +82,8 @@ class OverdueItem(BaseModel):
 class EndingSoonItem(BaseModel):
     # The lease's id
     lease_id: int
+    # The tenant's id
+    tenant_id: int
     # The tenant's name
     tenant_name: str
     # The unit number
@@ -89,6 +94,52 @@ class EndingSoonItem(BaseModel):
     end_date: date
     # How many days are left
     days_left: int
+
+
+# One empty unit
+class VacantUnit(BaseModel):
+    # The unit's id
+    unit_id: int
+    # The unit number
+    unit_number: str
+    # The kind of unit
+    unit_type: str | None
+    # The property it is in
+    property_id: int
+    # The property's name
+    property_name: str
+    # The monthly rent
+    rent_amount: int
+
+
+# One problem that is not fixed yet
+class RepairBrief(BaseModel):
+    # The request's id
+    id: int
+    # The title
+    title: str
+    # "low", "normal", or "urgent"
+    priority: str
+    # "open" or "in_progress"
+    status: str
+    # The property it is in
+    property_name: str
+    # The unit it is in (empty for the whole property)
+    unit_number: str | None
+    # When it was reported
+    created_at: datetime
+
+
+# A summary of the problems that are not fixed yet
+class RepairsSummary(BaseModel):
+    # How many are open
+    open_count: int
+    # How many are in progress
+    in_progress_count: int
+    # How many are urgent
+    urgent_count: int
+    # The most pressing ones (urgent first)
+    items: list[RepairBrief]
 
 
 # Everything the dashboard sends back
@@ -111,6 +162,10 @@ class Dashboard(BaseModel):
     overdue: list[OverdueItem]
     # Active leases ending within the next 30 days
     ending_soon: list[EndingSoonItem]
+    # The empty units
+    vacant_units: list[VacantUnit]
+    # The problems that are not fixed yet
+    repairs: RepairsSummary
     # The summary of each property
     properties: list[PropertySummary]
 
@@ -175,6 +230,59 @@ def get_dashboard(
             town=prop.town,
             units=build_counts(c["vacant"], c["occupied"], c["maintenance"]),
         ))
+
+    # ---- EMPTY UNITS ----
+    # Get this owner's vacant units, grouped by property
+    vacant_rows = (
+        db.query(models.Unit, models.Property)
+        .join(models.Property, models.Unit.property_id == models.Property.id)
+        .filter(models.Property.owner_id == current_user.id, models.Unit.status == "vacant")
+        .order_by(models.Property.name, models.Unit.unit_number)
+        .limit(MAX_VACANT_SHOWN)
+        .all()
+    )
+    vacant_units = [
+        VacantUnit(
+            unit_id=unit.id,
+            unit_number=unit.unit_number,
+            unit_type=unit.unit_type,
+            property_id=prop.id,
+            property_name=prop.name,
+            rent_amount=unit.rent_amount,
+        )
+        for unit, prop in vacant_rows
+    ]
+
+    # ---- PROBLEMS THAT ARE NOT FIXED YET ----
+    # Get this owner's repairs that are still open or in progress, newest first
+    repair_rows = (
+        db.query(models.MaintenanceRequest, models.Property, models.Unit)
+        .join(models.Property, models.MaintenanceRequest.property_id == models.Property.id)
+        .outerjoin(models.Unit, models.MaintenanceRequest.unit_id == models.Unit.id)
+        .filter(models.Property.owner_id == current_user.id, models.MaintenanceRequest.status != "fixed")
+        .order_by(models.MaintenanceRequest.created_at.desc(), models.MaintenanceRequest.id.desc())
+        .all()
+    )
+    # Put urgent problems first (the sort keeps "newest first" inside each group)
+    priority_rank = {"urgent": 0, "normal": 1, "low": 2}
+    repair_rows.sort(key=lambda row: priority_rank[row[0].priority])
+    repairs = RepairsSummary(
+        open_count=sum(1 for row in repair_rows if row[0].status == "open"),
+        in_progress_count=sum(1 for row in repair_rows if row[0].status == "in_progress"),
+        urgent_count=sum(1 for row in repair_rows if row[0].priority == "urgent"),
+        items=[
+            RepairBrief(
+                id=repair.id,
+                title=repair.title,
+                priority=repair.priority,
+                status=repair.status,
+                property_name=prop.name,
+                unit_number=unit.unit_number if unit else None,
+                created_at=repair.created_at,
+            )
+            for repair, prop, unit in repair_rows[:MAX_REPAIRS_SHOWN]
+        ],
+    )
 
     # ---- MONEY COLLECTED THIS MONTH ----
     # The first day of this month
@@ -277,6 +385,7 @@ def get_dashboard(
         if lease.status == "active" and lease.end_date is not None and today <= lease.end_date <= ending_limit:
             ending_items.append(EndingSoonItem(
                 lease_id=lease.id,
+                tenant_id=tenant.id,
                 tenant_name=tenant.full_name,
                 unit_number=unit.unit_number,
                 property_name=prop.name,
@@ -300,5 +409,7 @@ def get_dashboard(
         overdue_count=len(overdue_items),
         overdue=overdue_items,
         ending_soon=ending_items,
+        vacant_units=vacant_units,
+        repairs=repairs,
         properties=property_summaries,
     )
