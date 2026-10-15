@@ -1,5 +1,7 @@
 // Import the React tools we need
 import { useCallback, useEffect, useState } from 'react'
+// Import the page-switching tool
+import { Link } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
@@ -18,6 +20,7 @@ import { getDashboard } from '../api'
 import { formatDate, money, whatsappLink } from '../format'
 import CountUp from '../components/CountUp'
 import OccupancyRing from '../components/OccupancyRing'
+import RentBanner from '../components/RentBanner'
 
 // How the whole page appears: the cards come in one after another
 const listAnimation = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
@@ -50,7 +53,8 @@ function OverdueCard({ item }) {
 
   return (
     <motion.div variants={itemAnimation} className="rounded-2xl bg-paper p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+      {/* The top part opens the tenant's page, where payments can be recorded */}
+      <Link to={`/tenants/${item.tenant_id}`} className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-semibold text-forest-900">{item.tenant_name}</p>
           <p className="truncate text-sm text-muted">
@@ -67,7 +71,7 @@ function OverdueCard({ item }) {
           <p className="font-display text-lg font-bold text-terracotta">{money(item.amount_overdue)}</p>
           <p className="text-xs text-muted">{item.days_late} days late</p>
         </div>
-      </div>
+      </Link>
       {/* This button opens WhatsApp with the reminder already written */}
       <motion.a
         whileTap={{ scale: 0.97 }}
@@ -91,10 +95,10 @@ export default function Dashboard() {
   // The error message, if loading failed
   const [error, setError] = useState('')
 
-  // Load the dashboard numbers from the backend
-  const load = useCallback(() => {
+  // Load the dashboard numbers from the backend (a quiet reload keeps the old numbers on screen)
+  const load = useCallback((quiet = false) => {
     setError('')
-    setData(null)
+    if (!quiet) setData(null)
     getDashboard()
       .then(setData)
       .catch((err) => setError(err.message))
@@ -130,7 +134,7 @@ export default function Dashboard() {
           <p className="mt-1 text-sm">{error}</p>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={load}
+            onClick={() => load()}
             className="mt-4 flex items-center gap-2 rounded-xl bg-terracotta px-4 py-2 text-sm font-semibold text-white"
           >
             <RefreshCw size={16} /> Try again
@@ -160,6 +164,9 @@ export default function Dashboard() {
   return (
     <motion.div variants={listAnimation} initial="hidden" animate="show">
       {header}
+
+      {/* The card that offers to add this month's rent (only shows when rent is missing) */}
+      <RentBanner onDone={() => load(true)} />
 
       {/* The top row: the money card and the occupancy card */}
       <div className="grid gap-4 lg:grid-cols-3">
@@ -274,35 +281,41 @@ export default function Dashboard() {
       {data.properties.length === 0 ? (
         // No properties yet
         <motion.p variants={itemAnimation} className="mt-3 rounded-2xl bg-paper p-5 text-muted shadow-sm">
-          No properties yet. You will be able to add them from the Properties page soon.
+          No properties yet. Add one from the Properties page.
         </motion.p>
       ) : (
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {data.properties.map((prop) => (
-            <motion.div key={prop.property_id} variants={itemAnimation} className="rounded-2xl bg-paper p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-forest-900">{prop.name}</p>
-                  <p className="truncate text-sm text-muted">
-                    {[prop.town, prop.county].filter(Boolean).join(', ') || 'No location yet'}
+            <motion.div key={prop.property_id} variants={itemAnimation}>
+              {/* The whole card opens the property's page */}
+              <Link
+                to={`/properties/${prop.property_id}`}
+                className="block rounded-2xl bg-paper p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-forest-900">{prop.name}</p>
+                    <p className="truncate text-sm text-muted">
+                      {[prop.town, prop.county].filter(Boolean).join(', ') || 'No location yet'}
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-forest-700">
+                    {prop.units.occupied}/{prop.units.total} occupied
                   </p>
                 </div>
-                <p className="text-sm font-semibold text-forest-700">
-                  {prop.units.occupied}/{prop.units.total} occupied
+                {/* A bar that fills up to show how full the property is */}
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-forest-100">
+                  <motion.div
+                    className="h-full rounded-full bg-forest-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${prop.units.occupancy_percent}%` }}
+                    transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted">
+                  {prop.units.vacant} vacant · {prop.units.maintenance} under repair
                 </p>
-              </div>
-              {/* A bar that fills up to show how full the property is */}
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-forest-100">
-                <motion.div
-                  className="h-full rounded-full bg-forest-500"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${prop.units.occupancy_percent}%` }}
-                  transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-muted">
-                {prop.units.vacant} vacant · {prop.units.maintenance} under repair
-              </p>
+              </Link>
             </motion.div>
           ))}
         </div>

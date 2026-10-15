@@ -35,14 +35,26 @@ export function currentPeriod() {
   return todayISO().slice(0, 7)
 }
 
-// The month after a given one: "2026-10" becomes "2026-11" (and "2026-12" becomes "2027-01")
-export function nextPeriod(period) {
+// Move a month forwards or backwards: shiftPeriod("2026-10", 1) is "2026-11", and -1 gives "2026-09"
+export function shiftPeriod(period, change) {
   // Split "2026-10" into the year and the month number
   const [year, month] = period.split('-').map(Number)
-  // JavaScript counts months from 0, so using the month number as-is gives the next month
-  const next = new Date(year, month, 1)
+  // JavaScript counts months from 0, so we take one off the month number before adding the change
+  const moved = new Date(year, month - 1 + change, 1)
   // Write it back as "YYYY-MM"
-  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+  return `${moved.getFullYear()}-${String(moved.getMonth() + 1).padStart(2, '0')}`
+}
+
+// The month after a given one: "2026-10" becomes "2026-11" (and "2026-12" becomes "2027-01")
+export function nextPeriod(period) {
+  return shiftPeriod(period, 1)
+}
+
+// Write a month out in words: "2026-10" becomes "October 2026"
+export function monthLabel(period) {
+  // Split "2026-10" into the year and the month number
+  const [year, month] = period.split('-').map(Number)
+  return new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 }
 
 // Show a saved phone number the way people write it: 254712345678 becomes "0712 345 678"

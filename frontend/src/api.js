@@ -173,3 +173,19 @@ export const getPayments = (leaseId) => request(`/leases/${leaseId}/payments`)
 export const createPayment = (leaseId, data) => sendJson('POST', `/leases/${leaseId}/payments`, data)
 // Delete a payment
 export const deletePayment = (id) => request(`/payments/${id}`, { method: 'DELETE' })
+
+// Get all payments across every property, with filters like { month: '2026-10', method: 'cash' }
+export function getPaymentsReport(filters = {}) {
+  // Leave out any filter that is empty
+  const used = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value != null))
+  // Turn the filters into the "?month=2026-10&method=cash" part of the address
+  const query = new URLSearchParams(used).toString()
+  return request(`/payments${query ? `?${query}` : ''}`)
+}
+
+// ---------- MONTHLY RENT ----------
+
+// See which rent charges are missing, without adding anything
+export const getRentPreview = () => request('/billing/rent-preview')
+// Add all the missing rent charges
+export const generateRent = () => request('/billing/generate-rent', { method: 'POST' })
