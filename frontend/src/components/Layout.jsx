@@ -3,17 +3,26 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, LayoutDashboard, LogOut, Receipt, Users, Wallet, Wrench } from 'lucide-react'
+import { Building2, LayoutDashboard, LogOut, Receipt, UserCog, Users, Wallet, Wrench } from 'lucide-react'
 // Import our login information
 import { useAuth } from '../AuthContext'
 
-// The pages in the menu
-const NAV_ITEMS = [
+// The menu an owner sees on a phone (and the main part of the desktop sidebar)
+const OWNER_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/properties', label: 'Properties', icon: Building2 },
   { to: '/tenants', label: 'Tenants', icon: Users },
   { to: '/bills', label: 'Bills', icon: Receipt },
   { to: '/payments', label: 'Payments', icon: Wallet },
+  { to: '/repairs', label: 'Repairs', icon: Wrench },
+]
+
+// The extra menu item owners get on desktop (on a phone it lives in the top bar)
+const TEAM_ITEM = { to: '/team', label: 'Team', icon: UserCog }
+
+// The menu a caretaker sees
+const CARETAKER_ITEMS = [
+  { to: '/', label: 'My properties', icon: Building2 },
   { to: '/repairs', label: 'Repairs', icon: Wrench },
 ]
 
@@ -23,6 +32,11 @@ export default function Layout() {
   const { user, signOut } = useAuth()
   // Know which page we are on, so we can animate when it changes
   const location = useLocation()
+  // Caretakers get a smaller menu
+  const isCaretaker = user.role === 'caretaker'
+  // The items for the phone's bottom bar, and for the desktop sidebar
+  const barItems = isCaretaker ? CARETAKER_ITEMS : OWNER_ITEMS
+  const sidebarItems = isCaretaker ? CARETAKER_ITEMS : [...OWNER_ITEMS, TEAM_ITEM]
 
   return (
     <div className="min-h-screen lg:flex">
@@ -38,7 +52,7 @@ export default function Layout() {
           </div>
           {/* The menu links */}
           <nav className="mt-10 space-y-1">
-            {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+            {sidebarItems.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -70,7 +84,7 @@ export default function Layout() {
         {/* The user and the logout button */}
         <div>
           <p className="truncate text-sm font-semibold">{user.full_name}</p>
-          <p className="truncate text-xs text-forest-200">{user.email}</p>
+          <p className="truncate text-xs text-forest-200">{isCaretaker ? 'Caretaker' : user.email}</p>
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={signOut}
@@ -83,7 +97,7 @@ export default function Layout() {
 
       {/* The main area */}
       <div className="min-w-0 flex-1">
-        {/* The top bar on phones: logo and logout */}
+        {/* The top bar on phones: logo, then (for owners) the team link, then logout */}
         <header className="flex items-center justify-between px-5 pt-5 lg:hidden">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-forest-900 text-gold">
@@ -91,14 +105,27 @@ export default function Layout() {
             </div>
             <span className="font-display text-lg font-bold text-forest-900">M-nyumba</span>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={signOut}
-            aria-label="Log out"
-            className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
-          >
-            <LogOut size={18} />
-          </motion.button>
+          <div className="flex items-center gap-2">
+            {!isCaretaker && (
+              <NavLink
+                to="/team"
+                aria-label="Team"
+                className={({ isActive }) =>
+                  `rounded-xl p-2.5 shadow-sm ${isActive ? 'bg-forest-900 text-white' : 'bg-paper text-forest-700'}`
+                }
+              >
+                <UserCog size={18} />
+              </NavLink>
+            )}
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={signOut}
+              aria-label="Log out"
+              className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
+            >
+              <LogOut size={18} />
+            </motion.button>
+          </div>
         </header>
 
         {/* The page itself, which fades in each time you switch pages */}
@@ -117,7 +144,7 @@ export default function Layout() {
       {/* The bottom bar on phones (hidden on desktop) */}
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-forest-100 bg-paper/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         <div className="flex">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {barItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

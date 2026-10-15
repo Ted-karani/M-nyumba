@@ -14,8 +14,8 @@ import models
 import schemas
 import security
 from dependencies import get_db, get_current_user
-# Import the endpoints for properties, units, tenants, leases, billing, rent, utilities, maintenance, and the dashboard
-from routers import properties, units, tenants, leases, billing, rent, utilities, maintenance, dashboard
+# Import all the endpoint groups
+from routers import properties, units, tenants, leases, billing, rent, utilities, maintenance, staff, caretakers, dashboard
 
 # Create all the tables in the database if they don't exist yet
 Base.metadata.create_all(bind=engine)
@@ -52,6 +52,10 @@ app.include_router(rent.router)
 app.include_router(utilities.router)
 # Plug in the repairs endpoints
 app.include_router(maintenance.router)
+# Plug in the caretaker's own endpoints
+app.include_router(staff.router)
+# Plug in the endpoints owners use to manage caretakers
+app.include_router(caretakers.router)
 # Plug in the dashboard endpoint
 app.include_router(dashboard.router)
 

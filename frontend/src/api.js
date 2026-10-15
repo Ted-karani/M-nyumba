@@ -45,7 +45,7 @@ async function request(path, options = {}) {
     throw new Error('Cannot reach the server. Is the backend running?')
   }
 
-  // If our saved token was rejected, it has expired, so go back to the login screen
+  // If our saved token was rejected, it has expired (or the account was switched off), so go back to the login screen
   if (response.status === 401 && token && path !== '/auth/login') {
     clearToken()
     window.location.reload()
@@ -225,3 +225,32 @@ export const createRepair = (data) => sendJson('POST', '/maintenance', data)
 export const updateRepair = (id, data) => sendJson('PUT', `/maintenance/${id}`, data)
 // Delete a repair
 export const deleteRepair = (id) => request(`/maintenance/${id}`, { method: 'DELETE' })
+
+// ---------- TEAM (CARETAKERS) ----------
+
+// Get the properties a caretaker works with, with their units and tenants
+export const getWorkProperties = () => request('/work/properties')
+// The same list, in the shape the repair form expects
+export async function getWorkDirectory() {
+  // Get the properties a caretaker works with
+  const list = await getWorkProperties()
+  return {
+    properties: list.map((prop) => ({ property_id: prop.property_id, name: prop.name })),
+    units: list.flatMap((prop) =>
+      prop.units.map((unit) => ({
+        id: unit.unit_id,
+        property_id: prop.property_id,
+        unit_number: unit.unit_number,
+        property_name: prop.name,
+      }))
+    ),
+  }
+}
+// Mark an empty unit as "vacant" or "maintenance"
+export const setUnitStatus = (id, status) => sendJson('PUT', `/work/units/${id}/status`, { status })
+// Get the caretakers this owner created
+export const getCaretakers = () => request('/caretakers')
+// Add a caretaker
+export const createCaretaker = (data) => sendJson('POST', '/caretakers', data)
+// Edit a caretaker (change properties, reset the password, or switch the account off)
+export const updateCaretaker = (id, data) => sendJson('PUT', `/caretakers/${id}`, data)

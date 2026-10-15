@@ -302,3 +302,18 @@ class MaintenanceRequest(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     # The date it was fixed (empty until then)
     resolved_on = Column(Date, nullable=True)
+
+
+# This class is the "caretaker_accounts" table. Each row links a caretaker's login to the owner who created it.
+class CaretakerAccount(Base):
+    # The name of the table inside the database
+    __tablename__ = "caretaker_accounts"
+
+    # A unique number for each account, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The caretaker's login (points to the users table, and each login can only be linked once)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    # The owner who created this caretaker (points to the users table)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # The date and time the caretaker was added
+    created_at = Column(DateTime, default=datetime.utcnow)

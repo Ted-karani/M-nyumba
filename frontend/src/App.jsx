@@ -15,6 +15,8 @@ import TenantDetail from './pages/TenantDetail'
 import Bills from './pages/Bills'
 import Payments from './pages/Payments'
 import Repairs from './pages/Repairs'
+import Team from './pages/Team'
+import Work from './pages/Work'
 
 // Decide which screen to show
 function Screens() {
@@ -30,7 +32,22 @@ function Screens() {
   }
   // Not logged in? Show the login screen
   if (!user) return <Login />
-  // Logged in: show the pages inside the menu frame
+
+  // A caretaker only gets two screens
+  if (user.role === 'caretaker') {
+    return (
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Work />} />
+          <Route path="repairs" element={<Repairs />} />
+          {/* Any other address goes back to the caretaker home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    )
+  }
+
+  // An owner gets everything
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -42,6 +59,7 @@ function Screens() {
         <Route path="bills" element={<Bills />} />
         <Route path="payments" element={<Payments />} />
         <Route path="repairs" element={<Repairs />} />
+        <Route path="team" element={<Team />} />
         {/* Any other address goes back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

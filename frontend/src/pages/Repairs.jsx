@@ -1,11 +1,14 @@
 // Import the React tools we need
 import { useCallback, useEffect, useState } from 'react'
+// Import the page-switching tools
+import { useLocation, useNavigate } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
 import { Building2, Phone, Plus, RefreshCw, Wrench } from 'lucide-react'
 // Import our own files
-import { createRepair, deleteRepair, getRepairs, getUnitDirectory, updateRepair } from '../api'
+import { useAuth } from '../AuthContext'
+import { createRepair, deleteRepair, getRepairs, getUnitDirectory, getWorkDirectory, updateRepair } from '../api'
 import { formatDate, money, phoneLocal } from '../format'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { inputClass } from '../components/Field'
@@ -43,6 +46,12 @@ function age(createdAt) {
 
 // The page that lists all the repairs
 export default function Repairs() {
+  // Who is logged in? Caretakers see a simpler version without money
+  const { user } = useAuth()
+  const isCaretaker = user.role === 'caretaker'
+  // Lets us read what the last page sent us, and clear it
+  const location = useLocation()
+  const navigate = useNavigate()
   // The filters: which status ("" means all) and which property
   const [status, setStatus] = useState('')
   const [propertyId, setPropertyId] = useState('')
@@ -58,10 +67,20 @@ export default function Repairs() {
 
   // Load the properties and units once, for the forms and the property filter
   useEffect(() => {
-    getUnitDirectory()
+    const loader = isCaretaker ? getWorkDirectory : getUnitDirectory
+    loader()
       .then(setDirectory)
       .catch((err) => setError(err.message))
-  }, [])
+  }, [isCaretaker])
+
+  // If we came from the caretaker home screen's "Report a problem" button, open the form straight away
+  useEffect(() => {
+    if (location.state && location.state.add && directory) {
+      setAdding(true)
+      // Clear the message so a refresh does not open it again
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.state, location.pathname, directory, navigate])
 
   // Load the repairs (called again after every change)
   const load = useCallback(() => {
@@ -92,7 +111,9 @@ export default function Repairs() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-forest-900">Repairs</h1>
-          <p className="text-muted">Every problem, who is fixing it, and what it cost.</p>
+          <p className="text-muted">
+            {isCaretaker ? 'Report problems and keep them moving.' : 'Every problem, who is fixing it, and what it cost.'}
+          </p>
         </div>
         <motion.button
           whileTap={{ scale: 0.96 }}
@@ -125,7 +146,7 @@ export default function Repairs() {
 
       {report && (
         <>
-          {/* The green summary card */}
+          {/* The green summary card (caretakers see counts, owners also see what was spent) */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -139,10 +160,17 @@ export default function Repairs() {
               <p className="text-xs text-forest-200">In progress</p>
               <p className="font-display text-3xl font-bold">{report.in_progress_count}</p>
             </div>
-            <div>
-              <p className="text-xs text-forest-200">Spent this month</p>
-              <p className="font-display text-xl font-bold sm:text-3xl">{money(report.cost_this_month)}</p>
-            </div>
+            {isCaretaker ? (
+              <div>
+                <p className="text-xs text-forest-200">Fixed</p>
+                <p className="font-display text-3xl font-bold">{report.fixed_count}</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs text-forest-200">Spent this month</p>
+                <p className="font-display text-xl font-bold sm:text-3xl">{money(report.cost_this_month)}</p>
+              </div>
+            )}
           </motion.div>
 
           {/* The filter buttons and the property dropdown */}
@@ -232,6 +260,7 @@ export default function Repairs() {
                         {item.status === 'fixed' && item.resolved_on
                           ? `Fixed ${formatDate(item.resolved_on)}`
                           : `Reported ${age(item.created_at)}`}
+                        {item.reported_by_name ? ` by ${item.reported_by_name.split(' ')[0]}` : ''}
                       </span>
                       {item.cost != null && <span className="font-semibold text-forest-900">{money(item.cost)}</span>}
                     </div>
@@ -273,6 +302,7 @@ export default function Repairs() {
             key={editing.id}
             directory={directory}
             initial={editing}
+            canSetCost={!isCaretaker}
             submitLabel="Save changes"
             onCancel={() => setEditing(null)}
             onSubmit={async (body) => {
@@ -280,11 +310,16 @@ export default function Repairs() {
               setEditing(null)
               load()
             }}
-            onDelete={() => {
-              // Close the edit window and ask "are you sure?"
-              setDeleting(editing)
-              setEditing(null)
-            }}
+            // Only owners can delete a repair
+            onDelete={
+              isCaretaker
+                ? undefined
+                : () => {
+                    // Close the edit window and ask "are you sure?"
+                    setDeleting(editing)
+                    setEditing(null)
+                  }
+            }
           />
         )}
       </Modal>

@@ -1,5 +1,5 @@
-# Import the date tool
-from datetime import date
+# Import the date and time tools
+from datetime import date, datetime
 # Import the tool that lets us list allowed values
 from typing import Literal
 # Import FastAPI tools for building endpoints and errors
@@ -10,13 +10,13 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func
 # Import the database session type
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 # Import our own files
 import models
+from access import property_scope
 from dependencies import get_db, get_current_user
-# Reuse the safety helpers and the phone cleaner we wrote earlier
-from routers.properties import require_owner, get_owned_property
+# Reuse the owner check and the phone cleaner we wrote earlier
+from routers.properties import require_owner
 from schemas import clean_phone
 
 # Make a group of endpoints that all start with /maintenance
@@ -70,7 +70,7 @@ class RepairUpdate(BaseModel):
     priority: Literal["low", "normal", "urgent"] | None = None
     # New status
     status: Literal["open", "in_progress", "fixed"] | None = None
-    # The cost in shillings
+    # The cost in shillings (only owners may set this)
     cost: int | None = Field(default=None, ge=0)
     # Who is fixing it
     contractor_name: str | None = None
@@ -106,7 +106,7 @@ class RepairOut(BaseModel):
     priority: str
     # How far along it is
     status: str
-    # What it cost
+    # What it cost (always empty for caretakers)
     cost: int | None
     # Who is fixing it
     contractor_name: str | None
@@ -130,14 +130,14 @@ class RepairReport(BaseModel):
     in_progress_count: int
     # How many are fixed
     fixed_count: int
-    # What was spent on repairs fixed this month
+    # What was spent on repairs fixed this month (always 0 for caretakers)
     cost_this_month: int
     # The problems themselves
     items: list[RepairOut]
 
 
 # Turn a request and its related rows into the shape we send back
-def to_out(repair, prop, unit, creator) -> RepairOut:
+def to_out(repair, prop, unit, creator, hide_cost: bool) -> RepairOut:
     return RepairOut(
         id=repair.id,
         property_id=prop.id,
@@ -148,7 +148,7 @@ def to_out(repair, prop, unit, creator) -> RepairOut:
         description=repair.description,
         priority=repair.priority,
         status=repair.status,
-        cost=repair.cost,
+        cost=None if hide_cost else repair.cost,
         contractor_name=repair.contractor_name,
         contractor_phone=repair.contractor_phone,
         notes=repair.notes,
@@ -158,15 +158,17 @@ def to_out(repair, prop, unit, creator) -> RepairOut:
     )
 
 
-# Find a request, but only if its property belongs to this user
-def load_item(db: Session, repair_id: int, owner: models.User):
+# Find a request, but only if it is in a property this person may work with
+def load_item(db: Session, repair_id: int, user: models.User):
+    # Which properties may this person work with?
+    scope = property_scope(db, user)
     # Join the request to its property, unit, and the person who reported it
     row = (
         db.query(models.MaintenanceRequest, models.Property, models.Unit, models.User)
         .join(models.Property, models.MaintenanceRequest.property_id == models.Property.id)
         .outerjoin(models.Unit, models.MaintenanceRequest.unit_id == models.Unit.id)
         .outerjoin(models.User, models.MaintenanceRequest.created_by_id == models.User.id)
-        .filter(models.MaintenanceRequest.id == repair_id, models.Property.owner_id == owner.id)
+        .filter(models.MaintenanceRequest.id == repair_id, models.Property.id.in_(scope))
         .first()
     )
     # Say "not found" for missing and for someone else's, so nothing leaks
@@ -176,7 +178,7 @@ def load_item(db: Session, repair_id: int, owner: models.User):
     return row
 
 
-# List this owner's repairs (optionally only one status or one property)
+# List the repairs this person may see (optionally only one status or one property)
 @router.get("", response_model=RepairReport)
 def list_repairs(
     status: Literal["open", "in_progress", "fixed"] | None = Query(default=None),
@@ -184,8 +186,12 @@ def list_repairs(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    # Always start with only this owner's repairs
-    conditions = [models.Property.owner_id == current_user.id]
+    # Which properties may this person work with?
+    scope = property_scope(db, current_user)
+    # Caretakers never see money
+    hide_cost = current_user.role != "owner"
+    # Always start with only the properties they may work with
+    conditions = [models.Property.id.in_(scope)]
     # Only one property
     if property_id:
         conditions.append(models.MaintenanceRequest.property_id == property_id)
@@ -202,18 +208,20 @@ def list_repairs(
     for row_status, number in count_rows:
         counts[row_status] = number
 
-    # Add up what was spent on repairs fixed this month
-    month_start = date.today().replace(day=1)
-    cost_this_month = (
-        db.query(func.coalesce(func.sum(models.MaintenanceRequest.cost), 0))
-        .join(models.Property, models.MaintenanceRequest.property_id == models.Property.id)
-        .filter(
-            *conditions,
-            models.MaintenanceRequest.status == "fixed",
-            models.MaintenanceRequest.resolved_on >= month_start,
+    # Add up what was spent on repairs fixed this month (owners only)
+    cost_this_month = 0
+    if not hide_cost:
+        month_start = date.today().replace(day=1)
+        cost_this_month = (
+            db.query(func.coalesce(func.sum(models.MaintenanceRequest.cost), 0))
+            .join(models.Property, models.MaintenanceRequest.property_id == models.Property.id)
+            .filter(
+                *conditions,
+                models.MaintenanceRequest.status == "fixed",
+                models.MaintenanceRequest.resolved_on >= month_start,
+            )
+            .scalar()
         )
-        .scalar()
-    )
 
     # Get the repairs themselves, newest first
     query = (
@@ -235,7 +243,7 @@ def list_repairs(
         in_progress_count=counts["in_progress"],
         fixed_count=counts["fixed"],
         cost_this_month=int(cost_this_month),
-        items=[to_out(repair, prop, unit, creator) for repair, prop, unit, creator in rows],
+        items=[to_out(repair, prop, unit, creator, hide_cost) for repair, prop, unit, creator in rows],
     )
 
 
@@ -246,10 +254,12 @@ def create_repair(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    # Only owners can report problems for now (caretakers come in the next step)
-    require_owner(current_user)
-    # Make sure the property is theirs
-    prop = get_owned_property(db, data.property_id, current_user)
+    # Which properties may this person work with?
+    scope = property_scope(db, current_user)
+    # Make sure the property is one of them
+    if data.property_id not in scope:
+        raise HTTPException(status_code=404, detail="Property not found")
+    prop = db.get(models.Property, data.property_id)
     # If a unit was given, make sure it is inside this property
     unit = None
     if data.unit_id is not None:
@@ -282,7 +292,7 @@ def create_repair(
     # Reload it so it includes its new id
     db.refresh(repair)
     # Send it back
-    return to_out(repair, prop, unit, current_user)
+    return to_out(repair, prop, unit, current_user, hide_cost=current_user.role != "owner")
 
 
 # Get one repair by its id
@@ -292,10 +302,10 @@ def get_repair(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    # Find it, but only if it is theirs
+    # Find it, but only if this person may work with its property
     repair, prop, unit, creator = load_item(db, repair_id, current_user)
     # Send it back
-    return to_out(repair, prop, unit, creator)
+    return to_out(repair, prop, unit, creator, hide_cost=current_user.role != "owner")
 
 
 # Edit a repair (send only the fields that changed)
@@ -306,12 +316,13 @@ def update_repair(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    # Only owners can edit repairs for now
-    require_owner(current_user)
-    # Find it, but only if it is theirs
+    # Find it, but only if this person may work with its property
     repair, prop, unit, creator = load_item(db, repair_id, current_user)
     # Get only the fields that were actually sent
     changes = data.model_dump(exclude_unset=True)
+    # Only owners may enter costs
+    if "cost" in changes and current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only the owner can enter costs")
     # Change the status first, and keep the "fixed on" date in step with it
     new_status = changes.pop("status", None)
     if new_status and new_status != repair.status:
@@ -335,10 +346,10 @@ def update_repair(
     # Reload it with the changes
     db.refresh(repair)
     # Send it back
-    return to_out(repair, prop, unit, creator)
+    return to_out(repair, prop, unit, creator, hide_cost=current_user.role != "owner")
 
 
-# Delete a repair (for fixing a mistake)
+# Delete a repair (owners only, for fixing a mistake)
 @router.delete("/{repair_id}", status_code=204)
 def delete_repair(
     repair_id: int,
@@ -347,7 +358,7 @@ def delete_repair(
 ):
     # Only owners can delete repairs
     require_owner(current_user)
-    # Find it, but only if it is theirs
+    # Find it, but only if it is in one of their properties
     repair, prop, unit, creator = load_item(db, repair_id, current_user)
     # Delete it
     db.delete(repair)

@@ -45,7 +45,7 @@ function Choice({ options, value, onChange, urgent = false }) {
 }
 
 // The form for reporting a problem, or for editing one that was already reported
-export default function RepairForm({ directory, initial, submitLabel, onSubmit, onCancel, onDelete }) {
+export default function RepairForm({ directory, initial, submitLabel, onSubmit, onCancel, onDelete, canSetCost = true }) {
   // Are we editing an existing repair?
   const isEdit = Boolean(initial)
   // What the person has typed so far (starting from the saved values when editing)
@@ -73,7 +73,7 @@ export default function RepairForm({ directory, initial, submitLabel, onSubmit, 
   if (!isEdit && directory.properties.length === 0) {
     return (
       <div>
-        <p className="text-muted">Add a property first, then you can report problems in it.</p>
+        <p className="text-muted">There are no properties to report a problem in yet.</p>
         <button onClick={onCancel} className="mt-6 w-full rounded-xl bg-forest-100 py-3 font-semibold text-forest-700 hover:bg-forest-200">
           Close
         </button>
@@ -90,17 +90,19 @@ export default function RepairForm({ directory, initial, submitLabel, onSubmit, 
     setBusy(true)
     try {
       if (isEdit) {
-        // Send the changes (empty boxes become "nothing")
-        await onSubmit({
+        // Build the changes (empty boxes become "nothing")
+        const body = {
           title: title.trim(),
           description: description.trim() || null,
           priority,
           status,
-          cost: cost === '' ? null : Math.round(Number(cost)),
           contractor_name: contractorName.trim() || null,
           contractor_phone: contractorPhone.trim() || null,
           notes: notes.trim() || null,
-        })
+        }
+        // Only owners send a cost (the backend refuses it from anyone else)
+        if (canSetCost) body.cost = cost === '' ? null : Math.round(Number(cost))
+        await onSubmit(body)
       } else {
         // Send the new problem
         await onSubmit({
@@ -182,29 +184,31 @@ export default function RepairForm({ directory, initial, submitLabel, onSubmit, 
         <Choice options={PRIORITIES} value={priority} onChange={setPriority} urgent />
       </div>
 
-      {/* The status and cost only make sense once the problem exists */}
+      {/* The status only makes sense once the problem exists */}
       {isEdit && (
-        <>
-          <div>
-            <span className="mb-1 block text-sm font-medium">Progress</span>
-            <Choice options={STATUSES} value={status} onChange={setStatus} />
-          </div>
-          <Field
-            label="Cost (KSh)"
-            hint={status === 'fixed' && cost === '' ? 'Add the cost so your monthly repair total is right.' : undefined}
-          >
-            <input
-              className={inputClass}
-              type="number"
-              inputMode="numeric"
-              min="0"
-              step="1"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              placeholder="1200"
-            />
-          </Field>
-        </>
+        <div>
+          <span className="mb-1 block text-sm font-medium">Progress</span>
+          <Choice options={STATUSES} value={status} onChange={setStatus} />
+        </div>
+      )}
+
+      {/* The cost is for owners only */}
+      {isEdit && canSetCost && (
+        <Field
+          label="Cost (KSh)"
+          hint={status === 'fixed' && cost === '' ? 'Add the cost so your monthly repair total is right.' : undefined}
+        >
+          <input
+            className={inputClass}
+            type="number"
+            inputMode="numeric"
+            min="0"
+            step="1"
+            value={cost}
+            onChange={(e) => setCost(e.target.value)}
+            placeholder="1200"
+          />
+        </Field>
       )}
 
       <div className="grid grid-cols-2 gap-3">
@@ -238,7 +242,7 @@ export default function RepairForm({ directory, initial, submitLabel, onSubmit, 
       )}
 
       <div className="flex gap-3 pt-2">
-        {isEdit && (
+        {isEdit && onDelete && (
           <button
             type="button"
             onClick={onDelete}
