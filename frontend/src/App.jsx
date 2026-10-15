@@ -12,6 +12,7 @@ import Properties from './pages/Properties'
 import PropertyDetail from './pages/PropertyDetail'
 import Tenants from './pages/Tenants'
 import TenantDetail from './pages/TenantDetail'
+import Bills from './pages/Bills'
 import Payments from './pages/Payments'
 
 // Decide which screen to show
@@ -37,6 +38,7 @@ function Screens() {
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="tenants" element={<Tenants />} />
         <Route path="tenants/:id" element={<TenantDetail />} />
+        <Route path="bills" element={<Bills />} />
         <Route path="payments" element={<Payments />} />
         {/* Any other address goes back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />

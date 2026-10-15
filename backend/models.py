@@ -236,3 +236,34 @@ class Payment(Base):
     lease = relationship("Lease", back_populates="payments")
     # Lets us write payment.recorded_by to get the user who entered it
     recorded_by = relationship("User")
+
+
+# This class is the "meter_readings" table. Each water or electricity meter reading is one row.
+class MeterReading(Base):
+    # The name of the table inside the database
+    __tablename__ = "meter_readings"
+    # Rule: a unit can only have one reading per utility per month
+    __table_args__ = (UniqueConstraint("unit_id", "utility", "period", name="one_reading_per_unit_utility_month"),)
+
+    # A unique number for each reading, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The unit the meter belongs to (points to the units table)
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=False)
+    # Which meter: "water" or "electricity"
+    utility = Column(String, nullable=False)
+    # The month the reading is for, written like "2026-10"
+    period = Column(String, nullable=False)
+    # The number on the meter
+    reading = Column(Float, nullable=False)
+    # The reading it was compared with (empty for the very first reading)
+    previous_reading = Column(Float, nullable=True)
+    # The price per unit used for this bill
+    rate = Column(Float, nullable=True)
+    # How many units were used (the reading minus the previous reading)
+    units_used = Column(Float, nullable=True)
+    # The amount billed in shillings
+    amount = Column(Integer, nullable=True)
+    # The charge that was created from this reading (points to the charges table)
+    charge_id = Column(Integer, ForeignKey("charges.id"), nullable=True)
+    # The date and time the reading was saved
+    created_at = Column(DateTime, default=datetime.utcnow)

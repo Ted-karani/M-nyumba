@@ -189,3 +189,22 @@ export function getPaymentsReport(filters = {}) {
 export const getRentPreview = () => request('/billing/rent-preview')
 // Add all the missing rent charges
 export const generateRent = () => request('/billing/generate-rent', { method: 'POST' })
+
+// ---------- BILLS (WATER, ELECTRICITY, WI-FI) ----------
+
+// Get the meter reading sheet for a property, a utility ("water" or "electricity"), and a month like "2026-10"
+export function getMeterSheet(propertyId, utility, period) {
+  const query = new URLSearchParams({ property_id: propertyId, utility, period }).toString()
+  return request(`/utilities/sheet?${query}`)
+}
+// Save meter readings and charge the tenants for what they used
+export const billMeters = (data) => sendJson('POST', '/utilities/bill', data)
+// Undo a meter reading (this also removes the charge that came from it)
+export const undoReading = (id) => request(`/utilities/readings/${id}`, { method: 'DELETE' })
+// Get the Wi-Fi sheet for a property and a month
+export function getWifiSheet(propertyId, period) {
+  const query = new URLSearchParams({ property_id: propertyId, period }).toString()
+  return request(`/utilities/wifi-sheet?${query}`)
+}
+// Charge a flat Wi-Fi fee to the chosen units
+export const billWifi = (data) => sendJson('POST', '/utilities/bill-wifi', data)

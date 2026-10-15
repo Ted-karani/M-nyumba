@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, LayoutDashboard, LogOut, Users, Wallet } from 'lucide-react'
+import { Building2, LayoutDashboard, LogOut, Receipt, Users, Wallet } from 'lucide-react'
 // Import our login information
 import { useAuth } from '../AuthContext'
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/properties', label: 'Properties', icon: Building2 },
   { to: '/tenants', label: 'Tenants', icon: Users },
+  { to: '/bills', label: 'Bills', icon: Receipt },
   { to: '/payments', label: 'Payments', icon: Wallet },
 ]
 
