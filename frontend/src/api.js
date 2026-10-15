@@ -254,3 +254,9 @@ export const getCaretakers = () => request('/caretakers')
 export const createCaretaker = (data) => sendJson('POST', '/caretakers', data)
 // Edit a caretaker (change properties, reset the password, or switch the account off)
 export const updateCaretaker = (id, data) => sendJson('PUT', `/caretakers/${id}`, data)
+
+// ---------- SET UP EXISTING TENANTS ----------
+
+// Check a list of existing tenants (dryRun true), or save it (dryRun false)
+export const importExistingTenants = (rows, dryRun) =>
+  sendJson('POST', '/onboarding/existing-tenants', { rows, dry_run: dryRun })

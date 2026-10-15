@@ -1,30 +1,19 @@
 // Import the page-switching tools
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, LayoutDashboard, LogOut, Receipt, UserCog, Users, Wallet, Wrench } from 'lucide-react'
-// Import our login information
+import { Building2, LogOut } from 'lucide-react'
+// Import our login information and the menus
 import { useAuth } from '../AuthContext'
+import { CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR } from '../nav'
 
-// The menu an owner sees on a phone (and the main part of the desktop sidebar)
-const OWNER_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/properties', label: 'Properties', icon: Building2 },
-  { to: '/tenants', label: 'Tenants', icon: Users },
-  { to: '/bills', label: 'Bills', icon: Receipt },
-  { to: '/payments', label: 'Payments', icon: Wallet },
-  { to: '/repairs', label: 'Repairs', icon: Wrench },
-]
-
-// The extra menu item owners get on desktop (on a phone it lives in the top bar)
-const TEAM_ITEM = { to: '/team', label: 'Team', icon: UserCog }
-
-// The menu a caretaker sees
-const CARETAKER_ITEMS = [
-  { to: '/', label: 'My properties', icon: Building2 },
-  { to: '/repairs', label: 'Repairs', icon: Wrench },
-]
+// Is a menu item the current page? (a screen inside a section also lights up its item)
+function isActiveItem(pathname, item) {
+  // "More" lists several addresses, other items have just one
+  const paths = item.matches || [item.to]
+  return paths.some((path) => (path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`)))
+}
 
 // The frame around every screen: sidebar on desktop, bottom bar on phones
 export default function Layout() {
@@ -35,13 +24,13 @@ export default function Layout() {
   // Caretakers get a smaller menu
   const isCaretaker = user.role === 'caretaker'
   // The items for the phone's bottom bar, and for the desktop sidebar
-  const barItems = isCaretaker ? CARETAKER_ITEMS : OWNER_ITEMS
-  const sidebarItems = isCaretaker ? CARETAKER_ITEMS : [...OWNER_ITEMS, TEAM_ITEM]
+  const barItems = isCaretaker ? CARETAKER_ITEMS : OWNER_BAR
+  const sidebarItems = isCaretaker ? CARETAKER_ITEMS : OWNER_SIDEBAR
 
   return (
     <div className="min-h-screen lg:flex">
       {/* The desktop sidebar (hidden on phones) */}
-      <aside className="sticky top-0 hidden h-screen w-64 flex-col justify-between bg-forest-900 p-6 text-white lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 flex-col justify-between overflow-y-auto bg-forest-900 p-6 text-white lg:flex">
         <div>
           {/* The logo */}
           <div className="flex items-center gap-3">
@@ -82,7 +71,7 @@ export default function Layout() {
           </nav>
         </div>
         {/* The user and the logout button */}
-        <div>
+        <div className="mt-6">
           <p className="truncate text-sm font-semibold">{user.full_name}</p>
           <p className="truncate text-xs text-forest-200">{isCaretaker ? 'Caretaker' : user.email}</p>
           <motion.button
@@ -97,7 +86,7 @@ export default function Layout() {
 
       {/* The main area */}
       <div className="min-w-0 flex-1">
-        {/* The top bar on phones: logo, then (for owners) the team link, then logout */}
+        {/* The top bar on phones: logo and logout */}
         <header className="flex items-center justify-between px-5 pt-5 lg:hidden">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-forest-900 text-gold">
@@ -105,27 +94,14 @@ export default function Layout() {
             </div>
             <span className="font-display text-lg font-bold text-forest-900">M-nyumba</span>
           </div>
-          <div className="flex items-center gap-2">
-            {!isCaretaker && (
-              <NavLink
-                to="/team"
-                aria-label="Team"
-                className={({ isActive }) =>
-                  `rounded-xl p-2.5 shadow-sm ${isActive ? 'bg-forest-900 text-white' : 'bg-paper text-forest-700'}`
-                }
-              >
-                <UserCog size={18} />
-              </NavLink>
-            )}
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={signOut}
-              aria-label="Log out"
-              className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
-            >
-              <LogOut size={18} />
-            </motion.button>
-          </div>
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            onClick={signOut}
+            aria-label="Log out"
+            className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
+          >
+            <LogOut size={18} />
+          </motion.button>
         </header>
 
         {/* The page itself, which fades in each time you switch pages */}
@@ -144,33 +120,31 @@ export default function Layout() {
       {/* The bottom bar on phones (hidden on desktop) */}
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-forest-100 bg-paper/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         <div className="flex">
-          {barItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                `relative flex min-w-0 flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition ${
-                  isActive ? 'text-forest-900' : 'text-muted'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {/* A small green line slides above the active item */}
-                  {isActive && (
-                    <motion.span
-                      layoutId="bottom-pill"
-                      className="absolute top-0 h-1 w-8 rounded-b-full bg-forest-500"
-                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                  <Icon size={20} />
-                  <span className="max-w-full truncate">{label}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
+          {barItems.map((item) => {
+            // Is this the page we are on?
+            const active = isActiveItem(location.pathname, item)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition ${
+                  active ? 'text-forest-900' : 'text-muted'
+                }`}
+              >
+                {/* A small green line slides above the active item */}
+                {active && (
+                  <motion.span
+                    layoutId="bottom-pill"
+                    className="absolute top-0 h-1 w-8 rounded-b-full bg-forest-500"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <Icon size={20} />
+                <span className="max-w-full truncate">{item.short || item.label}</span>
+              </Link>
+            )
+          })}
         </div>
       </nav>
     </div>
