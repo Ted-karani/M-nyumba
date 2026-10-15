@@ -14,6 +14,7 @@ import Tenants from './pages/Tenants'
 import TenantDetail from './pages/TenantDetail'
 import Bills from './pages/Bills'
 import Payments from './pages/Payments'
+import Repairs from './pages/Repairs'
 
 // Decide which screen to show
 function Screens() {
@@ -40,6 +41,7 @@ function Screens() {
         <Route path="tenants/:id" element={<TenantDetail />} />
         <Route path="bills" element={<Bills />} />
         <Route path="payments" element={<Payments />} />
+        <Route path="repairs" element={<Repairs />} />
         {/* Any other address goes back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

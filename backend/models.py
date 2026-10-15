@@ -267,3 +267,38 @@ class MeterReading(Base):
     charge_id = Column(Integer, ForeignKey("charges.id"), nullable=True)
     # The date and time the reading was saved
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# This class is the "maintenance_requests" table. Each problem to fix is one row.
+class MaintenanceRequest(Base):
+    # The name of the table inside the database
+    __tablename__ = "maintenance_requests"
+
+    # A unique number for each request, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The property the problem is in (points to the properties table)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    # The unit the problem is in (empty means the whole property, like the gate or a water tank)
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=True)
+    # A short title, like "Leaking kitchen tap"
+    title = Column(String, nullable=False)
+    # A longer explanation (optional)
+    description = Column(Text, nullable=True)
+    # How urgent it is: "low", "normal", or "urgent"
+    priority = Column(String, nullable=False, default="normal")
+    # How far along it is: "open", "in_progress", or "fixed"
+    status = Column(String, nullable=False, default="open")
+    # What the repair cost in shillings (empty until it is known)
+    cost = Column(Integer, nullable=True)
+    # The name of the person fixing it
+    contractor_name = Column(String, nullable=True)
+    # Their phone number
+    contractor_phone = Column(String, nullable=True)
+    # Any extra notes
+    notes = Column(Text, nullable=True)
+    # The user who reported the problem (points to the users table)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    # The date and time the problem was reported
+    created_at = Column(DateTime, default=datetime.utcnow)
+    # The date it was fixed (empty until then)
+    resolved_on = Column(Date, nullable=True)

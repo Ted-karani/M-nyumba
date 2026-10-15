@@ -208,3 +208,20 @@ export function getWifiSheet(propertyId, period) {
 }
 // Charge a flat Wi-Fi fee to the chosen units
 export const billWifi = (data) => sendJson('POST', '/utilities/bill-wifi', data)
+
+// ---------- REPAIRS ----------
+
+// Get repairs, optionally filtered, like getRepairs({ status: 'open', property_id: 1 })
+export function getRepairs(filters = {}) {
+  // Leave out any filter that is empty
+  const used = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value != null))
+  // Turn the filters into the "?status=open" part of the address
+  const query = new URLSearchParams(used).toString()
+  return request(`/maintenance${query ? `?${query}` : ''}`)
+}
+// Report a new problem
+export const createRepair = (data) => sendJson('POST', '/maintenance', data)
+// Edit a repair
+export const updateRepair = (id, data) => sendJson('PUT', `/maintenance/${id}`, data)
+// Delete a repair
+export const deleteRepair = (id) => request(`/maintenance/${id}`, { method: 'DELETE' })

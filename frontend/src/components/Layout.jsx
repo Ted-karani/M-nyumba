@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, LayoutDashboard, LogOut, Receipt, Users, Wallet } from 'lucide-react'
+import { Building2, LayoutDashboard, LogOut, Receipt, Users, Wallet, Wrench } from 'lucide-react'
 // Import our login information
 import { useAuth } from '../AuthContext'
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: '/tenants', label: 'Tenants', icon: Users },
   { to: '/bills', label: 'Bills', icon: Receipt },
   { to: '/payments', label: 'Payments', icon: Wallet },
+  { to: '/repairs', label: 'Repairs', icon: Wrench },
 ]
 
 // The frame around every screen: sidebar on desktop, bottom bar on phones
@@ -114,7 +115,7 @@ export default function Layout() {
       </div>
 
       {/* The bottom bar on phones (hidden on desktop) */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-forest-100 bg-paper/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-forest-100 bg-paper/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         <div className="flex">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -122,7 +123,7 @@ export default function Layout() {
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `relative flex flex-1 flex-col items-center gap-1 py-3 text-[11px] font-medium transition ${
+                `relative flex min-w-0 flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition ${
                   isActive ? 'text-forest-900' : 'text-muted'
                 }`
               }
@@ -133,12 +134,12 @@ export default function Layout() {
                   {isActive && (
                     <motion.span
                       layoutId="bottom-pill"
-                      className="absolute top-0 h-1 w-10 rounded-b-full bg-forest-500"
+                      className="absolute top-0 h-1 w-8 rounded-b-full bg-forest-500"
                       transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                     />
                   )}
-                  <Icon size={21} />
-                  {label}
+                  <Icon size={20} />
+                  <span className="max-w-full truncate">{label}</span>
                 </>
               )}
             </NavLink>
