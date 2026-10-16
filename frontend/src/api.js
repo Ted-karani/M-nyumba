@@ -77,6 +77,13 @@ const sendJson = (method, path, body) =>
     body: JSON.stringify(body),
   })
 
+// Leave out any filter that is empty, and turn the rest into "?a=1&b=2"
+function queryString(filters) {
+  const used = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value != null))
+  const query = new URLSearchParams(used).toString()
+  return query ? `?${query}` : ''
+}
+
 // ---------- LOGIN ----------
 
 // Log in with email and password, and get a token back
@@ -149,11 +156,7 @@ export const deleteTenant = (id) => request(`/tenants/${id}`, { method: 'DELETE'
 // ---------- LEASES ----------
 
 // Get leases, optionally filtered, like getLeases({ tenant_id: 1, status: 'active' })
-export function getLeases(filters = {}) {
-  // Turn the filters into the "?tenant_id=1&status=active" part of the address
-  const query = new URLSearchParams(filters).toString()
-  return request(`/leases${query ? `?${query}` : ''}`)
-}
+export const getLeases = (filters = {}) => request(`/leases${queryString(filters)}`)
 // Move a tenant into a unit
 export const createLease = (data) => sendJson('POST', '/leases', data)
 // End a lease: the tenant leaves and the unit becomes vacant (no date means today)
@@ -175,13 +178,7 @@ export const createPayment = (leaseId, data) => sendJson('POST', `/leases/${leas
 export const deletePayment = (id) => request(`/payments/${id}`, { method: 'DELETE' })
 
 // Get all payments across every property, with filters like { month: '2026-10', method: 'cash' }
-export function getPaymentsReport(filters = {}) {
-  // Leave out any filter that is empty
-  const used = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value != null))
-  // Turn the filters into the "?month=2026-10&method=cash" part of the address
-  const query = new URLSearchParams(used).toString()
-  return request(`/payments${query ? `?${query}` : ''}`)
-}
+export const getPaymentsReport = (filters = {}) => request(`/payments${queryString(filters)}`)
 
 // ---------- MONTHLY RENT ----------
 
@@ -212,13 +209,7 @@ export const billWifi = (data) => sendJson('POST', '/utilities/bill-wifi', data)
 // ---------- REPAIRS ----------
 
 // Get repairs, optionally filtered, like getRepairs({ status: 'open', property_id: 1 })
-export function getRepairs(filters = {}) {
-  // Leave out any filter that is empty
-  const used = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value != null))
-  // Turn the filters into the "?status=open" part of the address
-  const query = new URLSearchParams(used).toString()
-  return request(`/maintenance${query ? `?${query}` : ''}`)
-}
+export const getRepairs = (filters = {}) => request(`/maintenance${queryString(filters)}`)
 // Report a new problem
 export const createRepair = (data) => sendJson('POST', '/maintenance', data)
 // Edit a repair
@@ -267,3 +258,55 @@ export const importExistingTenants = (rows, dryRun) =>
 export const getReminderSummary = () => request('/reminders/summary')
 // Record that a reminder was sent
 export const logReminder = (data) => sendJson('POST', '/reminders', data)
+
+// ---------- EXPENSES AND REPORTS ----------
+
+// Get expenses, optionally filtered, like getExpenses({ month: '2026-10', property_id: 1 })
+export const getExpenses = (filters = {}) => request(`/expenses${queryString(filters)}`)
+// Record an expense
+export const createExpense = (data) => sendJson('POST', '/expenses', data)
+// Edit an expense
+export const updateExpense = (id, data) => sendJson('PUT', `/expenses/${id}`, data)
+// Delete an expense
+export const deleteExpense = (id) => request(`/expenses/${id}`, { method: 'DELETE' })
+// Get the monthly report (propertyId can be empty for all properties)
+export const getMonthlyReport = (month, propertyId) =>
+  request(`/reports/monthly${queryString({ month, property_id: propertyId })}`)
+
+// Download a file from the backend (this sends the login token, which a plain link cannot do)
+export async function downloadFile(path, filename) {
+  // Send the token so the backend knows who we are
+  const token = getToken()
+  let response
+  try {
+    response = await fetch(API_URL + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  } catch {
+    throw new Error('Cannot reach the server. Is the backend running?')
+  }
+  // If our saved token was rejected, go back to the login screen
+  if (response.status === 401) {
+    clearToken()
+    window.location.reload()
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+  // If the backend said no, show why
+  if (!response.ok) {
+    let data = null
+    try {
+      data = await response.json()
+    } catch {
+      data = null
+    }
+    throw new Error(errorMessage(data, response.status))
+  }
+  // Save the file on the person's computer
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}

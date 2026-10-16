@@ -43,3 +43,38 @@ body {
 h1, h2, h3 {
   font-family: var(--font-display);
 }
+
+/* Things that only appear on paper (hidden on the screen) */
+.print-only {
+  display: none;
+}
+
+/* The print layout: used when you press "Save as PDF" or print */
+@media print {
+  /* Show the paper-only parts */
+  .print-only {
+    display: block;
+  }
+  /* Hide the menus and anything marked "no-print" */
+  .no-print,
+  aside,
+  header,
+  nav {
+    display: none !important;
+  }
+  /* Plain white paper, and keep the colored cards colored */
+  body {
+    background: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Use the whole page width */
+  main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  /* No shadows on paper */
+  * {
+    box-shadow: none !important;
+  }
+}
