@@ -260,3 +260,10 @@ export const updateCaretaker = (id, data) => sendJson('PUT', `/caretakers/${id}`
 // Check a list of existing tenants (dryRun true), or save it (dryRun false)
 export const importExistingTenants = (rows, dryRun) =>
   sendJson('POST', '/onboarding/existing-tenants', { rows, dry_run: dryRun })
+
+// ---------- REMINDERS ----------
+
+// Get when each lease was last reminded
+export const getReminderSummary = () => request('/reminders/summary')
+// Record that a reminder was sent
+export const logReminder = (data) => sendJson('POST', '/reminders', data)

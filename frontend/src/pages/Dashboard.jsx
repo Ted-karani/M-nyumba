@@ -247,8 +247,15 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
-      {/* The overdue tenants */}
-      <SectionTitle icon={TriangleAlert} color="text-terracotta" title="Overdue" count={data.overdue_count} />
+      {/* The overdue tenants, with a link to remind them all */}
+      <SectionTitle
+        icon={TriangleAlert}
+        color="text-terracotta"
+        title="Overdue"
+        count={data.overdue_count}
+        to={data.overdue_count > 0 ? '/owing' : null}
+        linkLabel="Remind everyone"
+      />
       {data.overdue.length === 0 ? (
         // Nobody is late: show good news
         <motion.div

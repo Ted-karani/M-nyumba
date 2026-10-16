@@ -19,6 +19,7 @@ import Team from './pages/Team'
 import Work from './pages/Work'
 import Setup from './pages/Setup'
 import More from './pages/More'
+import Owing from './pages/Owing'
 
 // Decide which screen to show
 function Screens() {
@@ -60,6 +61,7 @@ function Screens() {
         <Route path="tenants/:id" element={<TenantDetail />} />
         <Route path="payments" element={<Payments />} />
         <Route path="more" element={<More />} />
+        <Route path="owing" element={<Owing />} />
         <Route path="bills" element={<Bills />} />
         <Route path="repairs" element={<Repairs />} />
         <Route path="team" element={<Team />} />
