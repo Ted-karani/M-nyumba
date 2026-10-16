@@ -22,6 +22,8 @@ import More from './pages/More'
 import Owing from './pages/Owing'
 import Expenses from './pages/Expenses'
 import Reports from './pages/Reports'
+import Documents from './pages/Documents'
+import Tasks from './pages/Tasks'
 
 // Decide which screen to show
 function Screens() {
@@ -68,6 +70,8 @@ function Screens() {
         <Route path="repairs" element={<Repairs />} />
         <Route path="expenses" element={<Expenses />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="documents" element={<Documents />} />
+        <Route path="tasks" element={<Tasks />} />
         <Route path="team" element={<Team />} />
         <Route path="setup" element={<Setup />} />
         {/* Any other address goes back to the dashboard */}

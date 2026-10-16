@@ -24,6 +24,7 @@ import { formatDate, money, whatsappLink } from '../format'
 import CountUp from '../components/CountUp'
 import OccupancyRing from '../components/OccupancyRing'
 import RentBanner from '../components/RentBanner'
+import UpcomingCard from '../components/UpcomingCard'
 
 // How the whole page appears: the cards come in one after another
 const listAnimation = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
@@ -203,6 +204,9 @@ export default function Dashboard() {
 
       {/* The card that offers to add this month's rent (only shows when rent is missing) */}
       <RentBanner onDone={() => load(true)} />
+
+      {/* The card that lists tasks due soon and documents about to expire (only shows when something is coming up) */}
+      <UpcomingCard />
 
       {/* The top row: the money card and the occupancy card */}
       <div className="grid gap-4 lg:grid-cols-3">

@@ -84,6 +84,70 @@ function queryString(filters) {
   return query ? `?${query}` : ''
 }
 
+// Get a file from the backend (this sends the login token, which a plain link or picture tag cannot do)
+export async function fetchBlob(path) {
+  // Send the token so the backend knows who we are
+  const token = getToken()
+  let response
+  try {
+    response = await fetch(API_URL + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  } catch {
+    throw new Error('Cannot reach the server. Is the backend running?')
+  }
+  // If our saved token was rejected, go back to the login screen
+  if (response.status === 401) {
+    clearToken()
+    window.location.reload()
+    throw new Error('Your session has expired. Please sign in again.')
+  }
+  // If the backend said no, show why
+  if (!response.ok) {
+    let data = null
+    try {
+      data = await response.json()
+    } catch {
+      data = null
+    }
+    throw new Error(errorMessage(data, response.status))
+  }
+  return response.blob()
+}
+
+// Save a file that is in the browser's memory onto the person's computer
+function triggerDownload(url, filename) {
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+}
+
+// Download a file from the backend
+export async function downloadFile(path, filename) {
+  const blob = await fetchBlob(path)
+  const url = URL.createObjectURL(blob)
+  triggerDownload(url, filename)
+  URL.revokeObjectURL(url)
+}
+
+// Open a file from the backend in a new tab
+export async function openFile(path, filename) {
+  // Open the tab right away (browsers only allow this straight after a click), and fill it in once the file arrives
+  const tab = window.open('', '_blank')
+  try {
+    const blob = await fetchBlob(path)
+    const url = URL.createObjectURL(blob)
+    if (tab) tab.location.href = url
+    else triggerDownload(url, filename)
+    // Let go of the file in memory after a minute
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  } catch (err) {
+    if (tab) tab.close()
+    throw err
+  }
+}
+
 // ---------- LOGIN ----------
 
 // Log in with email and password, and get a token back
@@ -273,40 +337,26 @@ export const deleteExpense = (id) => request(`/expenses/${id}`, { method: 'DELET
 export const getMonthlyReport = (month, propertyId) =>
   request(`/reports/monthly${queryString({ month, property_id: propertyId })}`)
 
-// Download a file from the backend (this sends the login token, which a plain link cannot do)
-export async function downloadFile(path, filename) {
-  // Send the token so the backend knows who we are
-  const token = getToken()
-  let response
-  try {
-    response = await fetch(API_URL + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
-  } catch {
-    throw new Error('Cannot reach the server. Is the backend running?')
-  }
-  // If our saved token was rejected, go back to the login screen
-  if (response.status === 401) {
-    clearToken()
-    window.location.reload()
-    throw new Error('Your session has expired. Please sign in again.')
-  }
-  // If the backend said no, show why
-  if (!response.ok) {
-    let data = null
-    try {
-      data = await response.json()
-    } catch {
-      data = null
-    }
-    throw new Error(errorMessage(data, response.status))
-  }
-  // Save the file on the person's computer
-  const blob = await response.blob()
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
-}
+// ---------- DOCUMENTS AND TASKS ----------
+
+// Get documents, optionally filtered, like getDocuments({ kind: 'permit', expiring: 'true' })
+export const getDocuments = (filters = {}) => request(`/documents${queryString(filters)}`)
+// Upload a document (the form holds the file and its details)
+export const uploadDocument = (form) => request('/documents', { method: 'POST', body: form })
+// Edit a document's details
+export const updateDocument = (id, data) => sendJson('PUT', `/documents/${id}`, data)
+// Delete a document and its file
+export const deleteDocument = (id) => request(`/documents/${id}`, { method: 'DELETE' })
+
+// Get tasks: "open", "done", or "all"
+export const getTasks = (show = 'open') => request(`/tasks${queryString({ show })}`)
+// Add a task
+export const createTask = (data) => sendJson('POST', '/tasks', data)
+// Edit a task
+export const updateTask = (id, data) => sendJson('PUT', `/tasks/${id}`, data)
+// Delete a task
+export const deleteTask = (id) => request(`/tasks/${id}`, { method: 'DELETE' })
+// Mark a task done (a repeating task moves to its next due date)
+export const completeTask = (id) => request(`/tasks/${id}/done`, { method: 'POST' })
+// Get what is coming up: tasks due soon and documents about to expire
+export const getUpcoming = () => request('/tasks/upcoming')

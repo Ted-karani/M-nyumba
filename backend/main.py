@@ -17,7 +17,8 @@ from dependencies import get_db, get_current_user
 # Import all the endpoint groups
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
-    maintenance, staff, caretakers, onboarding, reminders, expenses, reports, dashboard,
+    maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
+    documents, tasks, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -67,6 +68,10 @@ app.include_router(reminders.router)
 app.include_router(expenses.router)
 # Plug in the report endpoints
 app.include_router(reports.router)
+# Plug in the document endpoints
+app.include_router(documents.router)
+# Plug in the task endpoints
+app.include_router(tasks.router)
 # Plug in the dashboard endpoint
 app.include_router(dashboard.router)
 
