@@ -25,6 +25,8 @@ import Reports from './pages/Reports'
 import Documents from './pages/Documents'
 import Tasks from './pages/Tasks'
 import Inspection from './pages/Inspection'
+import Account from './pages/Account'
+import Activity from './pages/Activity'
 
 // Decide which screen to show
 function Screens() {
@@ -41,7 +43,7 @@ function Screens() {
   // Not logged in? Show the login screen
   if (!user) return <Login />
 
-  // A caretaker gets their home screen, repairs, and the checklists
+  // A caretaker gets their home screen, repairs, the checklists, and their account
   if (user.role === 'caretaker') {
     return (
       <Routes>
@@ -49,6 +51,7 @@ function Screens() {
           <Route index element={<Work />} />
           <Route path="repairs" element={<Repairs />} />
           <Route path="leases/:leaseId/inspection/:kind" element={<Inspection />} />
+          <Route path="account" element={<Account />} />
           {/* Any other address goes back to the caretaker home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
@@ -76,7 +79,9 @@ function Screens() {
         <Route path="documents" element={<Documents />} />
         <Route path="tasks" element={<Tasks />} />
         <Route path="team" element={<Team />} />
+        <Route path="activity" element={<Activity />} />
         <Route path="setup" element={<Setup />} />
+        <Route path="account" element={<Account />} />
         {/* Any other address goes back to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

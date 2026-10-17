@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, LogOut } from 'lucide-react'
+import { Building2, LogOut, User } from 'lucide-react'
 // Import our login information and the menus
 import { useAuth } from '../AuthContext'
 import { CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR } from '../nav'
@@ -70,10 +70,13 @@ export default function Layout() {
             ))}
           </nav>
         </div>
-        {/* The user and the logout button */}
+        {/* The user (opens the account page) and the logout button */}
         <div className="mt-6">
-          <p className="truncate text-sm font-semibold">{user.full_name}</p>
-          <p className="truncate text-xs text-forest-200">{isCaretaker ? 'Caretaker' : user.email}</p>
+          <Link to="/account" className="block rounded-xl px-1 py-1 hover:bg-white/10">
+            <p className="truncate text-sm font-semibold">{user.full_name}</p>
+            <p className="truncate text-xs text-forest-200">{isCaretaker ? 'Caretaker' : user.email}</p>
+            <p className="mt-1 text-xs text-gold">My account and password</p>
+          </Link>
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={signOut}
@@ -86,7 +89,7 @@ export default function Layout() {
 
       {/* The main area */}
       <div className="min-w-0 flex-1">
-        {/* The top bar on phones: logo and logout */}
+        {/* The top bar on phones: logo, account, and logout */}
         <header className="flex items-center justify-between px-5 pt-5 lg:hidden">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-forest-900 text-gold">
@@ -94,14 +97,23 @@ export default function Layout() {
             </div>
             <span className="font-display text-lg font-bold text-forest-900">M-nyumba</span>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={signOut}
-            aria-label="Log out"
-            className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
-          >
-            <LogOut size={18} />
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/account"
+              aria-label="My account"
+              className={`rounded-xl p-2.5 shadow-sm ${location.pathname === '/account' ? 'bg-forest-900 text-white' : 'bg-paper text-forest-700'}`}
+            >
+              <User size={18} />
+            </Link>
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={signOut}
+              aria-label="Log out"
+              className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
+            >
+              <LogOut size={18} />
+            </motion.button>
+          </div>
         </header>
 
         {/* The page itself, which fades in each time you switch pages */}

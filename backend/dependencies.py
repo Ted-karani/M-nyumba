@@ -1,3 +1,5 @@
+# Import the date tools
+from datetime import timezone
 # Import FastAPI tools for errors and shared helpers
 from fastapi import Depends, HTTPException
 # Import the tool that reads login tokens
@@ -12,6 +14,7 @@ from database import SessionLocal
 # Import our own files
 import models
 import security
+from security_models import UserSecurity
 
 # Tell FastAPI where users log in to get a token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -50,5 +53,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     # Reject the request if the user is missing or switched off
     if user is None or not user.is_active:
         raise error
+    # Reject tokens made before the person's password was last changed
+    changed = db.query(UserSecurity.password_changed_at).filter(UserSecurity.user_id == user.id).scalar()
+    if changed is not None:
+        issued = int(payload.get("iat", 0))
+        if issued < int(changed.replace(tzinfo=timezone.utc).timestamp()):
+            raise error
     # Return the user so the endpoint knows who is asking
     return user

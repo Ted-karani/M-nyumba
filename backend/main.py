@@ -1,5 +1,7 @@
+# Import tools to read environment variables
+import os
 # Import FastAPI tools for building the app and handling errors
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 # Import the tool that lets our React app talk to this API
 from fastapi.middleware.cors import CORSMiddleware
 # Import the tool that handles login forms
@@ -10,22 +12,31 @@ from sqlalchemy.orm import Session
 # Import our database tools
 from database import engine, Base
 # Import our own files
+import audit
 import models
+import ratelimit
 import schemas
 import security
+import security_models
 from dependencies import get_db, get_current_user
 # Import all the endpoint groups
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
-    documents, tasks, inspections, dashboard,
+    documents, tasks, inspections, account, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
 Base.metadata.create_all(bind=engine)
 
+# A fake password hash, so signing in takes the same time whether or not the email exists
+DUMMY_HASH = security.hash_password("not-a-real-password")
+
 # Create the app and give it a name
 app = FastAPI(title="M-nyumba")
+
+# Record every change somebody makes (this is added first, so it sits inside the CORS layer below)
+app.add_middleware(audit.AuditMiddleware)
 
 # Allow our React app (running on port 5173) to call this API
 app.add_middleware(
@@ -74,6 +85,8 @@ app.include_router(documents.router)
 app.include_router(tasks.router)
 # Plug in the move-in and move-out checklist endpoints
 app.include_router(inspections.router)
+# Plug in the account endpoints (change password, activity log)
+app.include_router(account.router)
 # Plug in the dashboard endpoint
 app.include_router(dashboard.router)
 
@@ -85,11 +98,16 @@ def home():
     return {"message": "M-nyumba is running"}
 
 
-# Create a new account (anyone who registers here becomes an owner)
+# Create a new account (anyone who registers here becomes an owner, unless sign-ups are closed)
 @app.post("/auth/register", response_model=schemas.UserOut, status_code=201)
 def register(data: schemas.UserCreate, db: Session = Depends(get_db)):
+    # Sign-ups can be closed by setting ALLOW_REGISTRATION=false in the .env file
+    if os.getenv("ALLOW_REGISTRATION", "true").lower() == "false":
+        raise HTTPException(status_code=403, detail="Sign-ups are closed")
     # Store emails in lowercase so "A@x.com" and "a@x.com" are the same
     email = data.email.lower()
+    # The password must not be too easy to guess
+    account.validate_new_password(data.password, email)
     # Check if this email already has an account
     existing = db.query(models.User).filter(models.User.email == email).first()
     if existing:
@@ -114,14 +132,31 @@ def register(data: schemas.UserCreate, db: Session = Depends(get_db)):
 
 # Log in with email and password, and get a token back
 @app.post("/auth/login", response_model=schemas.Token)
-def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # The login form calls the email field "username"
     email = form.username.lower()
+    # The address the request came from
+    ip = request.client.host if request.client else None
+    # Too many wrong passwords? Make the person wait
+    wait = ratelimit.seconds_locked(db, email, ip)
+    if wait > 0:
+        minutes = (wait + 59) // 60
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed attempts. Try again in {minutes} minute{'s' if minutes != 1 else ''}.",
+            headers={"Retry-After": str(wait)},
+        )
     # Look for the user by email
     user = db.query(models.User).filter(models.User.email == email).first()
+    # Always check a password hash, so the time taken does not reveal whether the email exists
+    password_ok = security.verify_password(form.password, user.password_hash if user else DUMMY_HASH)
     # Same error for a wrong email or a wrong password, so attackers learn nothing
-    if user is None or not security.verify_password(form.password, user.password_hash) or not user.is_active:
+    if user is None or not password_ok or not user.is_active:
+        ratelimit.record(db, email, ip, success=False)
         raise HTTPException(status_code=401, detail="Wrong email or password")
+    # Remember the good sign-in, and add it to the activity log
+    ratelimit.record(db, email, ip, success=True)
+    audit.log_signin(db, user, ip)
     # Make a token for this user
     token = security.create_access_token(user.id)
     # Send the token back

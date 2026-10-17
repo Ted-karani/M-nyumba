@@ -385,3 +385,10 @@ export const deleteInspectionItem = (itemId) => request(`/inspections/items/${it
 export const uploadInspectionPhoto = (id, form) => request(`/inspections/${id}/photos`, { method: 'POST', body: form })
 // Delete a photo
 export const deleteInspectionPhoto = (photoId) => request(`/inspections/photos/${photoId}`, { method: 'DELETE' })
+
+// ---------- ACCOUNT AND ACTIVITY ----------
+
+// Change your own password
+export const changePassword = (data) => sendJson('POST', '/account/change-password', data)
+// Get the activity log (owners only), like getActivity({ days: 7, actor_id: 2 })
+export const getActivity = (filters = {}) => request(`/account/activity${queryString(filters)}`)

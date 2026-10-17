@@ -6,6 +6,8 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Float, 
 from sqlalchemy.orm import relationship
 # Import the Base class from our database file
 from database import Base
+# Import the column type that scrambles text before it is stored
+from encryption import EncryptedText
 
 
 # This class is the "users" table. Each user is one row.
@@ -131,8 +133,8 @@ class Tenant(Base):
     phone = Column(String, nullable=False)
     # The tenant's email (optional)
     email = Column(String, nullable=True)
-    # The tenant's national ID number (we will encrypt this later in Phase 4)
-    id_number = Column(String, nullable=True)
+    # The tenant's national ID number (scrambled in the database, shown normally in the app)
+    id_number = Column(EncryptedText, nullable=True)
     # The name of someone to call in an emergency
     emergency_contact_name = Column(String, nullable=True)
     # That person's phone number

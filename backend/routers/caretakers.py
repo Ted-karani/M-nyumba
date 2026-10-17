@@ -13,9 +13,11 @@ from sqlalchemy.orm import Session
 import models
 import security
 from dependencies import get_db, get_current_user
-# Reuse the owner check and the phone cleaner we wrote earlier
+# Reuse the owner check, the password check, and the phone cleaner we wrote earlier
+from routers.account import validate_new_password
 from routers.properties import require_owner
 from schemas import clean_phone
+from security_models import mark_password_changed
 
 # Make a group of endpoints that all start with /caretakers
 router = APIRouter(prefix="/caretakers", tags=["Caretakers"])
@@ -195,6 +197,8 @@ def create_caretaker(
     # Check if this email already has an account
     if db.query(models.User).filter(models.User.email == email).first():
         raise HTTPException(status_code=400, detail="This email is already registered")
+    # The password must not be too easy to guess
+    validate_new_password(data.password, email)
     # Make sure the properties are theirs
     property_ids = check_properties(db, current_user, data.property_ids)
     # Build the login, with the role fixed to "caretaker" and only the scrambled password saved
@@ -241,9 +245,11 @@ def update_caretaker(
     # Change the phone number (sending nothing clears it)
     if "phone" in changes:
         user.phone = changes["phone"]
-    # Reset the password
+    # Reset the password, and sign the caretaker out of every device they are logged in on
     if changes.get("password") is not None:
+        validate_new_password(changes["password"], user.email)
         user.password_hash = security.hash_password(changes["password"])
+        mark_password_changed(db, user.id)
     # Switch the account on or off
     if changes.get("is_active") is not None:
         user.is_active = changes["is_active"]

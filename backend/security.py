@@ -38,7 +38,12 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 # Make a token (a temporary pass) for a user
 def create_access_token(user_id: int) -> str:
-    # Work out when the token should stop working
-    expires = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_MINUTES)
-    # Put the user's id and the expiry time inside the token, then sign it
-    return jwt.encode({"sub": str(user_id), "exp": expires}, SECRET_KEY, algorithm=ALGORITHM)
+    # The current time, and when the token should stop working
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(minutes=TOKEN_MINUTES)
+    # Put the user's id, the time it was made, and the expiry time inside the token, then sign it
+    return jwt.encode(
+        {"sub": str(user_id), "iat": int(now.timestamp()), "exp": expires},
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )

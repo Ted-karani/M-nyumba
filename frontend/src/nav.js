@@ -7,6 +7,7 @@ import {
   Coins,
   FileText,
   FolderOpen,
+  History,
   LayoutDashboard,
   LayoutGrid,
   Receipt,
@@ -32,6 +33,7 @@ export const MORE_ITEMS = [
   { to: '/documents', label: 'Documents', icon: FolderOpen, description: 'Leases, title deeds, permits and photos' },
   { to: '/tasks', label: 'Tasks', icon: CalendarCheck, description: 'Tax dates, renewals and recurring jobs' },
   { to: '/team', label: 'Team', icon: UserCog, description: 'Caretakers and what they can see' },
+  { to: '/activity', label: 'Activity log', icon: History, description: 'Who changed what, and when' },
   { to: '/setup', label: 'Set up tenants', icon: ClipboardList, description: 'Add current tenants or import your notebook' },
 ]
 
