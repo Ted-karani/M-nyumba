@@ -1,11 +1,13 @@
 // Import the React tools we need
 import { useCallback, useEffect, useState } from 'react'
+// Import the page-switching tool
+import { Link } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { ChevronDown, ChevronUp, Plus, Receipt, Trash2, Wallet } from 'lucide-react'
+import { ChevronDown, ChevronUp, ClipboardCheck, Plus, Receipt, Trash2, Wallet } from 'lucide-react'
 // Import our own files
-import { createCharge, createPayment, deleteCharge, deletePayment, endLease, getCharges, getPayments } from '../api'
+import { createCharge, createPayment, deleteCharge, deletePayment, endLease, getCharges, getLeaseInspections, getPayments } from '../api'
 import { CHARGE_LABELS, METHOD_LABELS, formatDate, money } from '../format'
 import BalanceBadge from './BalanceBadge'
 import ChargeForm from './ChargeForm'
@@ -13,11 +15,19 @@ import ConfirmDialog from './ConfirmDialog'
 import Modal from './Modal'
 import PaymentForm from './PaymentForm'
 
+// Say how far along a checklist is
+function checklistStatus(inspection) {
+  if (!inspection) return 'Not started'
+  return inspection.finalized_at ? 'Done and locked' : 'In progress'
+}
+
 // One card for one lease: its balance, actions, and a statement of charges and payments
 export default function LeaseCard({ lease, unitInfo, onChanged }) {
   // The charges and payments (nothing until they arrive)
   const [charges, setCharges] = useState(null)
   const [payments, setPayments] = useState(null)
+  // The move-in and move-out checklists (nothing until they arrive)
+  const [inspections, setInspections] = useState(null)
   // An error message if the statement could not load
   const [statementError, setStatementError] = useState('')
   // Whether to show the whole statement or only the latest few rows
@@ -49,6 +59,13 @@ export default function LeaseCard({ lease, unitInfo, onChanged }) {
   useEffect(() => {
     loadStatement()
   }, [loadStatement])
+
+  // Load the checklists when the card first appears (if this fails we simply show them as not started)
+  useEffect(() => {
+    getLeaseInspections(lease.id)
+      .then(setInspections)
+      .catch(() => setInspections(null))
+  }, [lease.id])
 
   // After any change, reload the statement and tell the page to reload the balance
   async function refresh() {
@@ -152,6 +169,27 @@ export default function LeaseCard({ lease, unitInfo, onChanged }) {
             End lease
           </button>
         )}
+      </div>
+
+      {/* The move-in and move-out checklists */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {[
+          { kind: 'move_in', label: 'Move-in checklist', inspection: inspections && inspections.move_in },
+          { kind: 'move_out', label: 'Move-out checklist', inspection: inspections && inspections.move_out },
+        ].map((item) => (
+          <Link
+            key={item.kind}
+            to={`/leases/${lease.id}/inspection/${item.kind}`}
+            className="rounded-xl bg-cream p-3 transition hover:bg-forest-100"
+          >
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-forest-900">
+              <ClipboardCheck size={14} className="shrink-0 text-forest-500" /> {item.label}
+            </p>
+            <p className={`mt-0.5 text-xs ${item.inspection && item.inspection.finalized_at ? 'font-semibold text-forest-500' : 'text-muted'}`}>
+              {checklistStatus(item.inspection)}
+            </p>
+          </Link>
+        ))}
       </div>
 
       {/* The statement */}

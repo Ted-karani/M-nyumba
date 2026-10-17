@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, Loader2, MessageCircle, Phone, Plus, RefreshCw, Wrench } from 'lucide-react'
+import { Building2, ClipboardCheck, Loader2, MessageCircle, Phone, Plus, RefreshCw, Wrench } from 'lucide-react'
 // Import our own files
 import { useAuth } from '../AuthContext'
 import { getWorkProperties, setUnitStatus } from '../api'
@@ -93,6 +93,24 @@ function UnitRow({ unit, onChanged }) {
               <MessageCircle size={16} />
             </a>
           </div>
+        </div>
+      )}
+
+      {/* The move-in and move-out checklists for the tenant living here */}
+      {unit.lease_id && (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Link
+            to={`/leases/${unit.lease_id}/inspection/move_in`}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-forest-100 py-2.5 text-xs font-semibold text-forest-700 hover:bg-forest-200"
+          >
+            <ClipboardCheck size={14} /> Move-in checklist
+          </Link>
+          <Link
+            to={`/leases/${unit.lease_id}/inspection/move_out`}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-forest-100 py-2.5 text-xs font-semibold text-forest-700 hover:bg-forest-200"
+          >
+            <ClipboardCheck size={14} /> Move-out checklist
+          </Link>
         </div>
       )}
 

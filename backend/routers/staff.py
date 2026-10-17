@@ -30,6 +30,8 @@ class WorkUnit(BaseModel):
     unit_type: str | None
     # "vacant", "occupied", or "maintenance"
     status: str
+    # The id of the lease running now (so the checklists can be opened)
+    lease_id: int | None
     # The tenant living there (empty if nobody)
     tenant_name: str | None
     # The tenant's phone number
@@ -85,8 +87,8 @@ def my_properties(
     )
     unit_ids = [unit.id for unit in units]
 
-    # Find who is living in each unit right now
-    tenant_by_unit = {}
+    # Find who is living in each unit right now (and which lease it is)
+    living_by_unit = {}
     if unit_ids:
         lease_rows = (
             db.query(models.Lease, models.Tenant)
@@ -95,7 +97,7 @@ def my_properties(
             .all()
         )
         for lease, tenant in lease_rows:
-            tenant_by_unit[lease.unit_id] = tenant
+            living_by_unit[lease.unit_id] = (lease, tenant)
 
     # Count the problems that are not fixed yet, for each unit and each property
     repair_rows = (
@@ -118,14 +120,15 @@ def my_properties(
     # Put the units into their properties
     units_by_property = defaultdict(list)
     for unit in units:
-        tenant = tenant_by_unit.get(unit.id)
+        living = living_by_unit.get(unit.id)
         units_by_property[unit.property_id].append(WorkUnit(
             unit_id=unit.id,
             unit_number=unit.unit_number,
             unit_type=unit.unit_type,
             status=unit.status,
-            tenant_name=tenant.full_name if tenant else None,
-            tenant_phone=tenant.phone if tenant else None,
+            lease_id=living[0].id if living else None,
+            tenant_name=living[1].full_name if living else None,
+            tenant_phone=living[1].phone if living else None,
             open_repairs=repairs_by_unit[unit.id],
         ))
 

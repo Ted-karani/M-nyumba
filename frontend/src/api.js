@@ -360,3 +360,28 @@ export const deleteTask = (id) => request(`/tasks/${id}`, { method: 'DELETE' })
 export const completeTask = (id) => request(`/tasks/${id}/done`, { method: 'POST' })
 // Get what is coming up: tasks due soon and documents about to expire
 export const getUpcoming = () => request('/tasks/upcoming')
+
+// ---------- CHECKLISTS (MOVE-IN AND MOVE-OUT) ----------
+
+// Get both checklists of a lease
+export const getLeaseInspections = (leaseId) => request(`/inspections/lease/${leaseId}`)
+// Start a checklist ("move_in" or "move_out")
+export const startInspection = (leaseId, kind, data) => sendJson('POST', `/inspections/lease/${leaseId}/${kind}`, data)
+// Edit a checklist's date, notes, or the tenant's details
+export const updateInspection = (id, data) => sendJson('PUT', `/inspections/${id}`, data)
+// Lock a checklist
+export const finalizeInspection = (id) => request(`/inspections/${id}/finalize`, { method: 'POST' })
+// Unlock a checklist (owners only)
+export const unlockInspection = (id) => request(`/inspections/${id}/unlock`, { method: 'POST' })
+// Delete a whole checklist (owners only)
+export const deleteInspection = (id) => request(`/inspections/${id}`, { method: 'DELETE' })
+// Add an area to a checklist
+export const addInspectionItem = (id, area) => sendJson('POST', `/inspections/${id}/items`, { area })
+// Rate an area or change its note
+export const updateInspectionItem = (itemId, data) => sendJson('PUT', `/inspections/items/${itemId}`, data)
+// Remove an area
+export const deleteInspectionItem = (itemId) => request(`/inspections/items/${itemId}`, { method: 'DELETE' })
+// Upload a photo (the form holds the picture and, optionally, the area it shows)
+export const uploadInspectionPhoto = (id, form) => request(`/inspections/${id}/photos`, { method: 'POST', body: form })
+// Delete a photo
+export const deleteInspectionPhoto = (photoId) => request(`/inspections/photos/${photoId}`, { method: 'DELETE' })

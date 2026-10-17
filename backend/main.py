@@ -18,7 +18,7 @@ from dependencies import get_db, get_current_user
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
-    documents, tasks, dashboard,
+    documents, tasks, inspections, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -72,6 +72,8 @@ app.include_router(reports.router)
 app.include_router(documents.router)
 # Plug in the task endpoints
 app.include_router(tasks.router)
+# Plug in the move-in and move-out checklist endpoints
+app.include_router(inspections.router)
 # Plug in the dashboard endpoint
 app.include_router(dashboard.router)
 
