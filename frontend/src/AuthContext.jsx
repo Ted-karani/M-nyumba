@@ -30,17 +30,30 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
-  // Log in, save the token, then load the user's details
-  async function signIn(email, password) {
-    const data = await api.login(email, password)
-    api.saveToken(data.access_token)
+  // Save a token, then load the user's details
+  async function finish(token) {
+    api.saveToken(token)
     setUser(await api.getMe())
   }
 
-  // Create an account, then log in straight away
+  // Step one of signing in: returns { requiresOtp: true, challenge } when a code is still needed
+  async function signIn(email, password) {
+    const data = await api.login(email, password)
+    if (data.requires_otp) return { requiresOtp: true, challenge: data.challenge }
+    await finish(data.access_token)
+    return { requiresOtp: false }
+  }
+
+  // Step two of signing in: the 6-digit code (or a recovery code)
+  async function completeOtp(challenge, code) {
+    const data = await api.verifyOtp(challenge, code)
+    await finish(data.access_token)
+  }
+
+  // Create an account, then sign in straight away
   async function signUp(form) {
     await api.register(form)
-    await signIn(form.email, form.password)
+    return signIn(form.email, form.password)
   }
 
   // Log out: forget the token and the user
@@ -51,7 +64,7 @@ export function AuthProvider({ children }) {
 
   // Share these with every screen
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, completeOtp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

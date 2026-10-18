@@ -6,6 +6,8 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 # Import the tool that handles login forms
 from fastapi.security import OAuth2PasswordRequestForm
+# Import the tools that describe and check data shapes
+from pydantic import BaseModel, Field
 # Import the database session type
 from sqlalchemy.orm import Session
 
@@ -18,7 +20,9 @@ import ratelimit
 import schemas
 import security
 import security_models
+import twofactor
 from dependencies import get_db, get_current_user
+from security_models import UserTotp
 # Import all the endpoint groups
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
@@ -85,10 +89,30 @@ app.include_router(documents.router)
 app.include_router(tasks.router)
 # Plug in the move-in and move-out checklist endpoints
 app.include_router(inspections.router)
-# Plug in the account endpoints (change password, activity log)
+# Plug in the account endpoints (change password, 2-step login, activity log)
 app.include_router(account.router)
 # Plug in the dashboard endpoint
 app.include_router(dashboard.router)
+
+
+# What we send back after a sign-in step: either a login token, or a request for the 6-digit code
+class LoginResult(BaseModel):
+    # The login token (empty while a code is still needed)
+    access_token: str | None = None
+    # The kind of token (always "bearer")
+    token_type: str = "bearer"
+    # True if the person must now enter a code
+    requires_otp: bool = False
+    # The short-lived pass to send back together with the code
+    challenge: str | None = None
+
+
+# The data we ask for in the second step of signing in
+class OtpRequest(BaseModel):
+    # The short-lived pass from the first step
+    challenge: str
+    # The 6-digit code, or a recovery code
+    code: str = Field(min_length=4, max_length=20)
 
 
 # When someone visits the home address "/", send a simple message
@@ -130,22 +154,15 @@ def register(data: schemas.UserCreate, db: Session = Depends(get_db)):
     return user
 
 
-# Log in with email and password, and get a token back
-@app.post("/auth/login", response_model=schemas.Token)
+# Log in with email and password (this is step one: it gives a login token, or asks for a code)
+@app.post("/auth/login", response_model=LoginResult)
 def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # The login form calls the email field "username"
     email = form.username.lower()
     # The address the request came from
     ip = request.client.host if request.client else None
     # Too many wrong passwords? Make the person wait
-    wait = ratelimit.seconds_locked(db, email, ip)
-    if wait > 0:
-        minutes = (wait + 59) // 60
-        raise HTTPException(
-            status_code=429,
-            detail=f"Too many failed attempts. Try again in {minutes} minute{'s' if minutes != 1 else ''}.",
-            headers={"Retry-After": str(wait)},
-        )
+    account.refuse_if_locked(db, email, ip)
     # Look for the user by email
     user = db.query(models.User).filter(models.User.email == email).first()
     # Always check a password hash, so the time taken does not reveal whether the email exists
@@ -154,13 +171,42 @@ def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Ses
     if user is None or not password_ok or not user.is_active:
         ratelimit.record(db, email, ip, success=False)
         raise HTTPException(status_code=401, detail="Wrong email or password")
+    # If this person has 2-step login on, ask for the code before giving a token
+    totp = db.query(UserTotp).filter(UserTotp.user_id == user.id, UserTotp.enabled.is_(True)).first()
+    if totp is not None:
+        return LoginResult(requires_otp=True, challenge=security.create_challenge_token(user.id))
     # Remember the good sign-in, and add it to the activity log
     ratelimit.record(db, email, ip, success=True)
     audit.log_signin(db, user, ip)
-    # Make a token for this user
-    token = security.create_access_token(user.id)
-    # Send the token back
-    return {"access_token": token, "token_type": "bearer"}
+    # Make a token for this user and send it back
+    return LoginResult(access_token=security.create_access_token(user.id))
+
+
+# Finish signing in with the 6-digit code (or a recovery code)
+@app.post("/auth/login/verify", response_model=LoginResult)
+def login_verify(request: Request, data: OtpRequest, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else None
+    # Read the short-lived pass from step one
+    user_id = security.read_challenge_token(data.challenge)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="This sign-in took too long. Please start again")
+    user = db.get(models.User, user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=401, detail="This sign-in took too long. Please start again")
+    email = user.email.lower()
+    # Guessing codes is limited like guessing passwords
+    account.refuse_if_locked(db, email, ip)
+    row = db.query(UserTotp).filter(UserTotp.user_id == user.id, UserTotp.enabled.is_(True)).first()
+    if row is None:
+        raise HTTPException(status_code=401, detail="This sign-in took too long. Please start again")
+    # The code must be right (a recovery code works too, once)
+    if not (twofactor.check_code(row, data.code) or twofactor.use_recovery_code(row, data.code)):
+        ratelimit.record(db, email, ip, success=False)
+        raise HTTPException(status_code=401, detail="That code is not right")
+    # Remember the good sign-in (this also saves the used code), and add it to the activity log
+    ratelimit.record(db, email, ip, success=True)
+    audit.log_signin(db, user, ip)
+    return LoginResult(access_token=security.create_access_token(user.id))
 
 
 # Show the details of whoever is logged in (needs a valid token)

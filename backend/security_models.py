@@ -1,10 +1,12 @@
 # Import the date and time tool
 from datetime import datetime
 # Import the column types we need for the tables
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 
 # Import the Base class from our database file
 from database import Base
+# Import the column type that scrambles text before it is stored
+from encryption import EncryptedText
 
 
 # This class is the "user_security" table. It remembers when each person last changed their password.
@@ -18,6 +20,29 @@ class UserSecurity(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     # When their password was last changed (older logins stop working)
     password_changed_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+# This class is the "user_totp" table. It holds the settings for each person's 2-step login.
+class UserTotp(Base):
+    # The name of the table inside the database
+    __tablename__ = "user_totp"
+
+    # A unique number for each row, created automatically
+    id = Column(Integer, primary_key=True, index=True)
+    # The user it is about (each user has one row)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    # The secret shared with their authenticator app (scrambled in the database)
+    secret = Column(EncryptedText, nullable=False)
+    # True once they have proved the app works and turned 2-step login on
+    enabled = Column(Boolean, nullable=False, default=False)
+    # The newest code we accepted (so the same code cannot be used twice)
+    last_counter = Column(Integer, nullable=False, default=0)
+    # The recovery codes, kept as scrambled hashes (a list written as text)
+    recovery_hashes = Column(Text, nullable=True)
+    # When the row was made
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    # When 2-step login was turned on
+    enabled_at = Column(DateTime, nullable=True)
 
 
 # This class is the "login_attempts" table. Each time someone tries to sign in is one row.

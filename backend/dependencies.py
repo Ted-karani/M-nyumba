@@ -48,6 +48,9 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except (jwt.PyJWTError, KeyError, ValueError):
         # The token is fake, expired, or damaged
         raise error
+    # The short-lived "enter your code" pass is not a login token
+    if payload.get("purpose"):
+        raise error
     # Find that user in the database
     user = db.get(models.User, user_id)
     # Reject the request if the user is missing or switched off
@@ -56,8 +59,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     # Reject tokens made before the person's password was last changed
     changed = db.query(UserSecurity.password_changed_at).filter(UserSecurity.user_id == user.id).scalar()
     if changed is not None:
-        issued = int(payload.get("iat", 0))
-        if issued < int(changed.replace(tzinfo=timezone.utc).timestamp()):
+        issued = float(payload.get("iat", 0))
+        if issued < changed.replace(tzinfo=timezone.utc).timestamp():
             raise error
     # Return the user so the endpoint knows who is asking
     return user

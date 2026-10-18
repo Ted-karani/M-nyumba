@@ -8,6 +8,7 @@ import { CheckCircle2, KeyRound, Loader2, LogOut, ShieldCheck } from 'lucide-rea
 import { useAuth } from '../AuthContext'
 import { changePassword } from '../api'
 import { Field, inputClass } from '../components/Field'
+import TwoStepCard from '../components/TwoStepCard'
 import { initials } from '../format'
 
 // The page where you see your account and change your password
@@ -104,6 +105,9 @@ export default function Account() {
           </form>
         )}
       </div>
+
+      {/* 2-step login */}
+      <TwoStepCard />
 
       {/* A few safety tips */}
       <div className="mt-5 rounded-3xl bg-forest-100 p-6">

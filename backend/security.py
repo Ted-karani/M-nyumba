@@ -20,14 +20,18 @@ if not SECRET_KEY:
 
 # The method used to sign tokens
 ALGORITHM = "HS256"
-# How many minutes a token stays valid
+# How many minutes a login token stays valid
 TOKEN_MINUTES = 60
+# How many minutes the "now enter your code" pass stays valid
+CHALLENGE_MINUTES = 5
+# How hard passwords are to scramble (12 is slow on purpose, which protects them; the tests use a small number to run fast)
+ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "12"))
 
 
 # Turn a normal password into a scrambled hash we can safely store
 def hash_password(password: str) -> str:
     # Scramble the password with a random "salt" and return it as text
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=ROUNDS)).decode("utf-8")
 
 
 # Check if a typed password matches the stored hash
@@ -41,9 +45,31 @@ def create_access_token(user_id: int) -> str:
     # The current time, and when the token should stop working
     now = datetime.now(timezone.utc)
     expires = now + timedelta(minutes=TOKEN_MINUTES)
-    # Put the user's id, the time it was made, and the expiry time inside the token, then sign it
+    # Put the user's id, the exact time it was made, and the expiry time inside the token, then sign it
     return jwt.encode(
-        {"sub": str(user_id), "iat": int(now.timestamp()), "exp": expires},
+        {"sub": str(user_id), "iat": now.timestamp(), "exp": expires},
         SECRET_KEY,
         algorithm=ALGORITHM,
     )
+
+
+# Make the short-lived pass given after a correct password, when the person still has to enter a code
+def create_challenge_token(user_id: int) -> str:
+    expires = datetime.now(timezone.utc) + timedelta(minutes=CHALLENGE_MINUTES)
+    # The "purpose" marks it as NOT a login token
+    return jwt.encode({"sub": str(user_id), "purpose": "2fa", "exp": expires}, SECRET_KEY, algorithm=ALGORITHM)
+
+
+# Read that pass, and return the user's id (or nothing if it is fake, expired, or the wrong kind)
+def read_challenge_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.PyJWTError:
+        return None
+    # Only passes made for this purpose count
+    if payload.get("purpose") != "2fa":
+        return None
+    try:
+        return int(payload["sub"])
+    except (KeyError, ValueError):
+        return None

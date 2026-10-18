@@ -46,7 +46,8 @@ async function request(path, options = {}) {
   }
 
   // If our saved token was rejected, it has expired (or the account was switched off), so go back to the login screen
-  if (response.status === 401 && token && path !== '/auth/login') {
+  // (the sign-in steps are left out, because a wrong code there is not an expired session)
+  if (response.status === 401 && token && !path.startsWith('/auth/login')) {
     clearToken()
     window.location.reload()
     throw new Error('Your session has expired. Please sign in again.')
@@ -150,12 +151,15 @@ export async function openFile(path, filename) {
 
 // ---------- LOGIN ----------
 
-// Log in with email and password, and get a token back
+// Log in with email and password (step one: this gives a token, or asks for a code)
 export function login(email, password) {
   // The login endpoint wants a form, with the email under the name "username"
   const body = new URLSearchParams({ username: email, password })
   return request('/auth/login', { method: 'POST', body })
 }
+
+// Step two of signing in: send the short-lived pass together with the 6-digit code (or a recovery code)
+export const verifyOtp = (challenge, code) => sendJson('POST', '/auth/login/verify', { challenge, code })
 
 // Create a new account
 export const register = (form) => sendJson('POST', '/auth/register', form)
@@ -386,9 +390,17 @@ export const uploadInspectionPhoto = (id, form) => request(`/inspections/${id}/p
 // Delete a photo
 export const deleteInspectionPhoto = (photoId) => request(`/inspections/photos/${photoId}`, { method: 'DELETE' })
 
-// ---------- ACCOUNT AND ACTIVITY ----------
+// ---------- ACCOUNT, 2-STEP LOGIN, AND ACTIVITY ----------
 
 // Change your own password
 export const changePassword = (data) => sendJson('POST', '/account/change-password', data)
 // Get the activity log (owners only), like getActivity({ days: 7, actor_id: 2 })
 export const getActivity = (filters = {}) => request(`/account/activity${queryString(filters)}`)
+// Find out whether 2-step login is on
+export const getTwoStep = () => request('/account/2fa')
+// Start the setup: get the secret and the QR code address
+export const startTwoStep = () => request('/account/2fa/setup', { method: 'POST' })
+// Finish the setup with a code from the app (this returns the recovery codes)
+export const enableTwoStep = (code) => sendJson('POST', '/account/2fa/enable', { code })
+// Turn it off (needs the password and a code)
+export const disableTwoStep = (data) => sendJson('POST', '/account/2fa/disable', data)
