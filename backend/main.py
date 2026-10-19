@@ -16,6 +16,7 @@ from database import engine, Base
 # Import our own files
 import audit
 import models
+import portal_models
 import ratelimit
 import schemas
 import security
@@ -27,7 +28,7 @@ from security_models import UserTotp
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
-    documents, tasks, inspections, listings, account, dashboard,
+    documents, tasks, inspections, listings, portal, account, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -93,6 +94,12 @@ app.include_router(inspections.router)
 app.include_router(listings.router)
 # Plug in the public listing endpoints (these need no login)
 app.include_router(listings.public_router)
+# Plug in the endpoints tenants use
+app.include_router(portal.tenant_router)
+# Plug in the endpoints owners use to give tenants access and set the payment details
+app.include_router(portal.access_router)
+# Plug in the notice board endpoints
+app.include_router(portal.notices_router)
 # Plug in the account endpoints (change password, 2-step login, activity log)
 app.include_router(account.router)
 # Plug in the dashboard endpoint
@@ -119,6 +126,20 @@ class OtpRequest(BaseModel):
     code: str = Field(min_length=4, max_length=20)
 
 
+# Work out the login name from what was typed: an email stays as it is, a phone number becomes a tenant's hidden login name
+def login_name(typed: str) -> str:
+    text = typed.strip().lower()
+    # Anything with an @ is an email
+    if "@" in text:
+        return text
+    # Otherwise try it as a phone number
+    try:
+        phone = schemas.clean_phone(text)
+    except ValueError:
+        return text
+    return portal_models.tenant_email(phone)
+
+
 # When someone visits the home address "/", send a simple message
 @app.get("/")
 def home():
@@ -134,6 +155,9 @@ def register(data: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Sign-ups are closed")
     # Store emails in lowercase so "A@x.com" and "a@x.com" are the same
     email = data.email.lower()
+    # The hidden login names used for tenants cannot be registered by hand
+    if email.endswith("@" + portal_models.TENANT_EMAIL_DOMAIN):
+        raise HTTPException(status_code=400, detail="This email address cannot be used")
     # The password must not be too easy to guess
     account.validate_new_password(data.password, email)
     # Check if this email already has an account
@@ -158,11 +182,11 @@ def register(data: schemas.UserCreate, db: Session = Depends(get_db)):
     return user
 
 
-# Log in with email and password (this is step one: it gives a login token, or asks for a code)
+# Log in with an email (or, for tenants, a phone number) and a password (step one: this gives a login token, or asks for a code)
 @app.post("/auth/login", response_model=LoginResult)
 def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # The login form calls the email field "username"
-    email = form.username.lower()
+    email = login_name(form.username)
     # The address the request came from
     ip = request.client.host if request.client else None
     # Too many wrong passwords? Make the person wait

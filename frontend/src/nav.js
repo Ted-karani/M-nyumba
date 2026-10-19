@@ -1,5 +1,6 @@
 // Import the icons we use
 import {
+  Bell,
   BellRing,
   Building2,
   CalendarCheck,
@@ -8,10 +9,13 @@ import {
   FileText,
   FolderOpen,
   History,
+  Home,
   LayoutDashboard,
   LayoutGrid,
   Megaphone,
+  Newspaper,
   Receipt,
+  Smartphone,
   UserCog,
   Users,
   Wallet,
@@ -28,6 +32,8 @@ export const PAYMENTS = { to: '/payments', label: 'Payments', icon: Wallet }
 export const MORE_ITEMS = [
   { to: '/owing', label: 'Who owes me', icon: BellRing, description: 'Remind everyone who is late, in a few taps' },
   { to: '/listings', label: 'Vacancy listings', icon: Megaphone, description: 'Advertise empty units with photos and a link' },
+  { to: '/notices', label: 'Notice board', icon: Newspaper, description: 'Announcements your tenants can read' },
+  { to: '/portal-access', label: 'Tenant portal', icon: Smartphone, description: 'Let tenants see their balance and report problems' },
   { to: '/bills', label: 'Bills', icon: Receipt, description: 'Water, electricity and Wi-Fi' },
   { to: '/repairs', label: 'Repairs', icon: Wrench, description: 'Problems that need fixing' },
   { to: '/expenses', label: 'Expenses', icon: Coins, description: 'Caretaker pay, taxes, security and more' },
@@ -55,4 +61,11 @@ export const OWNER_SIDEBAR = [DASHBOARD, PROPERTIES, TENANTS, PAYMENTS, ...MORE_
 export const CARETAKER_ITEMS = [
   { to: '/', label: 'My properties', short: 'Properties', icon: Building2 },
   { to: '/repairs', label: 'Repairs', icon: Wrench },
+]
+
+// What a tenant sees (in both places)
+export const TENANT_ITEMS = [
+  { to: '/', label: 'My rent', short: 'My rent', icon: Home },
+  { to: '/repairs', label: 'Report a problem', short: 'Problems', icon: Wrench },
+  { to: '/notices', label: 'Notices', icon: Bell },
 ]

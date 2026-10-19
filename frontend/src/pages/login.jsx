@@ -247,10 +247,10 @@ export default function Login() {
             </div>
           </motion.div>
         ) : (
-          // The first step: email and password
+          // The first step: email (or phone number) and password
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="w-full max-w-sm">
             <h2 className="text-3xl font-bold text-forest-900">{isSignup ? 'Create your account' : 'Welcome back'}</h2>
-            <p className="mt-1 text-muted">{isSignup ? 'Start managing your properties.' : 'Sign in to see your properties.'}</p>
+            <p className="mt-1 text-muted">{isSignup ? 'Start managing your properties.' : 'Sign in to see your properties or your rent.'}</p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4">
               {/* The name and phone boxes slide in only when signing up */}
@@ -289,15 +289,15 @@ export default function Login() {
                 )}
               </AnimatePresence>
 
-              <Field label="Email">
+              <Field label={isSignup ? 'Email' : 'Email or phone number'}>
                 <input
                   className={inputClass}
-                  type="email"
+                  type={isSignup ? 'email' : 'text'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={isSignup ? 'you@example.com' : 'you@example.com or 0712 345 678'}
                   required
-                  autoComplete="email"
+                  autoComplete="username"
                 />
               </Field>
 
@@ -324,6 +324,9 @@ export default function Login() {
                   </button>
                 </div>
               </Field>
+
+              {/* A hint for tenants */}
+              {!isSignup && <p className="text-xs text-muted">Tenants: use the phone number your landlord has for you, and the password they sent you.</p>}
 
               {/* The error message fades in when something goes wrong */}
               <AnimatePresence>
@@ -354,7 +357,7 @@ export default function Login() {
 
             {/* The link that switches between the two forms */}
             <p className="mt-6 text-center text-sm text-muted">
-              {isSignup ? 'Already have an account?' : 'New to M-nyumba?'}{' '}
+              {isSignup ? 'Already have an account?' : 'New landlord on M-nyumba?'}{' '}
               <button type="button" onClick={switchMode} className="font-semibold text-forest-700 hover:underline">
                 {isSignup ? 'Sign in' : 'Create an account'}
               </button>

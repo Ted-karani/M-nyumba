@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Building2, LogOut, User } from 'lucide-react'
 // Import our login information and the menus
 import { useAuth } from '../AuthContext'
-import { CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR } from '../nav'
+import { CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR, TENANT_ITEMS } from '../nav'
 
 // Is a menu item the current page? (a screen inside a section also lights up its item)
 function isActiveItem(pathname, item) {
@@ -21,11 +21,11 @@ export default function Layout() {
   const { user, signOut } = useAuth()
   // Know which page we are on, so we can animate when it changes
   const location = useLocation()
-  // Caretakers get a smaller menu
-  const isCaretaker = user.role === 'caretaker'
-  // The items for the phone's bottom bar, and for the desktop sidebar
-  const barItems = isCaretaker ? CARETAKER_ITEMS : OWNER_BAR
-  const sidebarItems = isCaretaker ? CARETAKER_ITEMS : OWNER_SIDEBAR
+  // Each kind of person gets their own menu
+  const barItems = user.role === 'caretaker' ? CARETAKER_ITEMS : user.role === 'tenant' ? TENANT_ITEMS : OWNER_BAR
+  const sidebarItems = user.role === 'caretaker' ? CARETAKER_ITEMS : user.role === 'tenant' ? TENANT_ITEMS : OWNER_SIDEBAR
+  // The line under the name in the sidebar
+  const roleLine = user.role === 'caretaker' ? 'Caretaker' : user.role === 'tenant' ? 'Tenant' : user.email
 
   return (
     <div className="min-h-screen lg:flex">
@@ -74,7 +74,7 @@ export default function Layout() {
         <div className="mt-6">
           <Link to="/account" className="block rounded-xl px-1 py-1 hover:bg-white/10">
             <p className="truncate text-sm font-semibold">{user.full_name}</p>
-            <p className="truncate text-xs text-forest-200">{isCaretaker ? 'Caretaker' : user.email}</p>
+            <p className="truncate text-xs text-forest-200">{roleLine}</p>
             <p className="mt-1 text-xs text-gold">My account and password</p>
           </Link>
           <motion.button

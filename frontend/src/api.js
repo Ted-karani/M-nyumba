@@ -151,7 +151,7 @@ export async function openFile(path, filename) {
 
 // ---------- LOGIN ----------
 
-// Log in with email and password (step one: this gives a token, or asks for a code)
+// Log in with email (or a tenant's phone number) and password (step one: this gives a token, or asks for a code)
 export function login(email, password) {
   // The login endpoint wants a form, with the email under the name "username"
   const body = new URLSearchParams({ username: email, password })
@@ -423,3 +423,41 @@ export const uploadListingPhoto = (id, form) => request(`/listings/${id}/photos`
 export const deleteListingPhoto = (photoId) => request(`/listings/photos/${photoId}`, { method: 'DELETE' })
 // Get a public listing (no login needed)
 export const getPublicListing = (token) => request(`/public/listings/${token}`)
+
+// ---------- TENANT PORTAL (WHAT TENANTS USE) ----------
+
+// Find out whether the tenant still has to choose their own password
+export const getPortalStatus = () => request('/portal/status')
+// Choose a new password (this gives back a fresh token, so the tenant stays signed in)
+export const changePortalPassword = (data) => sendJson('POST', '/portal/change-password', data)
+// Get the home screen: balance, how to pay, and the latest notices
+export const getPortalHome = () => request('/portal/home')
+// Get the statement of one of the tenant's own leases
+export const getPortalStatement = (leaseId) => request(`/portal/statement/${leaseId}`)
+// Get all the notices the tenant may see
+export const getPortalNotices = () => request('/portal/notices')
+// Get the problems the tenant reported
+export const getPortalRepairs = () => request('/portal/repairs')
+// Report a problem
+export const createPortalRepair = (data) => sendJson('POST', '/portal/repairs', data)
+
+// ---------- TENANT PORTAL (WHAT OWNERS USE) ----------
+
+// Get the list of tenants and whether they have access
+export const getPortalAccess = () => request('/portal-access')
+// Give a tenant access, or make a new temporary password for them
+export const givePortalAccess = (tenantId) => request(`/portal-access/${tenantId}`, { method: 'POST' })
+// Switch a tenant's access on or off
+export const setPortalActive = (tenantId, isActive) => sendJson('PUT', `/portal-access/${tenantId}`, { is_active: isActive })
+// Get the payment details tenants see
+export const getPaymentDetails = () => request('/portal-access/payment-details')
+// Save the payment details tenants see
+export const savePaymentDetails = (data) => sendJson('PUT', '/portal-access/payment-details', data)
+// Get the notice board
+export const getNotices = () => request('/notices')
+// Post a notice
+export const createNotice = (data) => sendJson('POST', '/notices', data)
+// Edit a notice
+export const updateNotice = (id, data) => sendJson('PUT', `/notices/${id}`, data)
+// Delete a notice
+export const deleteNotice = (id) => request(`/notices/${id}`, { method: 'DELETE' })

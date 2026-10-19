@@ -1,7 +1,7 @@
 # Import the date tools
 from datetime import timezone
 # Import FastAPI tools for errors and shared helpers
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 # Import the tool that reads login tokens
 from fastapi.security import OAuth2PasswordBearer
 # Import the database session type
@@ -33,7 +33,7 @@ def get_db():
 
 
 # Work out which user is making the request by reading their token
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     # The error we send if anything is wrong with the token
     error = HTTPException(
         status_code=401,
@@ -62,5 +62,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         issued = float(payload.get("iat", 0))
         if issued < changed.replace(tzinfo=timezone.utc).timestamp():
             raise error
+    # Tenants may only use the tenant portal (everything else is closed to them, now and for anything we add later)
+    if user.role == "tenant":
+        path = request.url.path
+        if not (path.startswith("/portal/") or path == "/auth/me"):
+            raise HTTPException(status_code=403, detail="This account can only use the tenant portal")
     # Return the user so the endpoint knows who is asking
     return user

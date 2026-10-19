@@ -11,6 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import models
 import security
 from database import SessionLocal
+from portal_models import TenantAccount
 from security_models import AuditLog
 
 # Only requests that change things are recorded (just looking at a page is not)
@@ -78,6 +79,14 @@ RULES = [
     rule("POST", r"^/listings/(\d+)/photos$", "Added a photo to listing #{0}"),
     rule("DELETE", r"^/listings/photos/(\d+)$", "Deleted a listing photo"),
     rule("POST", r"^/listings/(\d+)/regenerate-link$", "Made a new link for listing #{0}"),
+    rule("POST", r"^/notices$", "Posted a notice"),
+    rule("PUT", r"^/notices/(\d+)$", "Edited notice #{0}"),
+    rule("DELETE", r"^/notices/(\d+)$", "Deleted notice #{0}"),
+    rule("PUT", r"^/portal-access/payment-details$", "Changed the payment details shown to tenants"),
+    rule("POST", r"^/portal-access/(\d+)$", "Gave tenant #{0} portal access (or made a new password)"),
+    rule("PUT", r"^/portal-access/(\d+)$", "Switched portal access on or off for tenant #{0}"),
+    rule("POST", r"^/portal/repairs$", "Reported a repair from the tenant portal"),
+    rule("POST", r"^/portal/change-password$", "Changed their password"),
     rule("POST", r"^/account/change-password$", "Changed their password"),
     rule("POST", r"^/account/2fa/setup$", "Started setting up 2-step login"),
     rule("POST", r"^/account/2fa/enable$", "Turned on 2-step login"),
@@ -106,6 +115,10 @@ def owner_id_for(db, user):
     # Owners work for themselves
     if user.role == "owner":
         return user.id
+    # Tenants belong to the landlord who gave them access
+    if user.role == "tenant":
+        account = db.query(TenantAccount).filter(TenantAccount.user_id == user.id).first()
+        return account.owner_id if account else None
     # Caretakers work for the owner who created them
     account = db.query(models.CaretakerAccount).filter(models.CaretakerAccount.user_id == user.id).first()
     return account.owner_id if account else None
@@ -144,8 +157,10 @@ def write_entry(token: str, method: str, path: str, ip):
         db.close()
 
 
-# Record that someone signed in
+# Record that someone signed in (tenants' sign-ins are not recorded: it is private and would fill the log)
 def log_signin(db, user, ip):
+    if user.role == "tenant":
+        return
     owner_id = owner_id_for(db, user)
     if owner_id is None:
         return

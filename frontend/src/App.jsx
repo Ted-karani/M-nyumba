@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
 // Import our screens
 import Layout from './components/Layout'
+import TenantGate from './components/TenantGate'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Properties from './pages/Properties'
@@ -29,6 +30,12 @@ import Account from './pages/Account'
 import Activity from './pages/Activity'
 import Listings from './pages/Listings'
 import PublicListing from './pages/PublicListing'
+import Notices from './pages/Notices'
+import PortalAccess from './pages/PortalAccess'
+import PortalHome from './pages/PortalHome'
+import PortalRepairs from './pages/PortalRepairs'
+import PortalNotices from './pages/PortalNotices'
+import PortalAccount from './pages/PortalAccount'
 
 // Decide which screen to show
 function Screens() {
@@ -56,6 +63,24 @@ function Screens() {
   }
   // Not logged in? Show the login screen
   if (!user) return <Login />
+
+  // A tenant gets the portal (after choosing their own password if they still have a temporary one)
+  if (user.role === 'tenant') {
+    return (
+      <Routes>
+        <Route element={<TenantGate />}>
+          <Route element={<Layout />}>
+            <Route index element={<PortalHome />} />
+            <Route path="repairs" element={<PortalRepairs />} />
+            <Route path="notices" element={<PortalNotices />} />
+            <Route path="account" element={<PortalAccount />} />
+            {/* Any other address goes back to the tenant home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Route>
+      </Routes>
+    )
+  }
 
   // A caretaker gets their home screen, repairs, the checklists, and their account
   if (user.role === 'caretaker') {
@@ -87,6 +112,8 @@ function Screens() {
         <Route path="more" element={<More />} />
         <Route path="owing" element={<Owing />} />
         <Route path="listings" element={<Listings />} />
+        <Route path="notices" element={<Notices />} />
+        <Route path="portal-access" element={<PortalAccess />} />
         <Route path="bills" element={<Bills />} />
         <Route path="repairs" element={<Repairs />} />
         <Route path="expenses" element={<Expenses />} />
