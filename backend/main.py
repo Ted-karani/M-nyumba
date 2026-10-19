@@ -27,7 +27,7 @@ from security_models import UserTotp
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
-    documents, tasks, inspections, account, dashboard,
+    documents, tasks, inspections, listings, account, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -89,6 +89,10 @@ app.include_router(documents.router)
 app.include_router(tasks.router)
 # Plug in the move-in and move-out checklist endpoints
 app.include_router(inspections.router)
+# Plug in the endpoints owners use to manage vacancy listings
+app.include_router(listings.router)
+# Plug in the public listing endpoints (these need no login)
+app.include_router(listings.public_router)
 # Plug in the account endpoints (change password, 2-step login, activity log)
 app.include_router(account.router)
 # Plug in the dashboard endpoint

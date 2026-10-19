@@ -10,6 +10,7 @@ import {
   History,
   LayoutDashboard,
   LayoutGrid,
+  Megaphone,
   Receipt,
   UserCog,
   Users,
@@ -26,6 +27,7 @@ export const PAYMENTS = { to: '/payments', label: 'Payments', icon: Wallet }
 // Everything else lives under "More" (add new screens here)
 export const MORE_ITEMS = [
   { to: '/owing', label: 'Who owes me', icon: BellRing, description: 'Remind everyone who is late, in a few taps' },
+  { to: '/listings', label: 'Vacancy listings', icon: Megaphone, description: 'Advertise empty units with photos and a link' },
   { to: '/bills', label: 'Bills', icon: Receipt, description: 'Water, electricity and Wi-Fi' },
   { to: '/repairs', label: 'Repairs', icon: Wrench, description: 'Problems that need fixing' },
   { to: '/expenses', label: 'Expenses', icon: Coins, description: 'Caretaker pay, taxes, security and more' },

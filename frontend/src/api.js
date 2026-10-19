@@ -1,5 +1,5 @@
-// The address of our backend
-const API_URL = 'http://127.0.0.1:8000'
+// The address of our backend (other files use it to build links)
+export const API_URL = 'http://127.0.0.1:8000'
 // The name we save the login token under in the browser
 const TOKEN_KEY = 'mnyumba_token'
 
@@ -404,3 +404,22 @@ export const startTwoStep = () => request('/account/2fa/setup', { method: 'POST'
 export const enableTwoStep = (code) => sendJson('POST', '/account/2fa/enable', { code })
 // Turn it off (needs the password and a code)
 export const disableTwoStep = (data) => sendJson('POST', '/account/2fa/disable', data)
+
+// ---------- VACANCY LISTINGS ----------
+
+// Get the owner's listings, and the empty units that have none yet
+export const getListings = () => request('/listings')
+// Make a listing for an empty unit
+export const createListing = (data) => sendJson('POST', '/listings', data)
+// Edit a listing
+export const updateListing = (id, data) => sendJson('PUT', `/listings/${id}`, data)
+// Delete a listing
+export const deleteListing = (id) => request(`/listings/${id}`, { method: 'DELETE' })
+// Make a new secret link (the old one stops working)
+export const newListingLink = (id) => request(`/listings/${id}/regenerate-link`, { method: 'POST' })
+// Add a photo to a listing (the form holds the picture)
+export const uploadListingPhoto = (id, form) => request(`/listings/${id}/photos`, { method: 'POST', body: form })
+// Delete a listing photo
+export const deleteListingPhoto = (photoId) => request(`/listings/photos/${photoId}`, { method: 'DELETE' })
+// Get a public listing (no login needed)
+export const getPublicListing = (token) => request(`/public/listings/${token}`)

@@ -72,7 +72,16 @@ RULES = [
     rule("PUT", r"^/inspections/items/(\d+)$", None),
     rule("DELETE", r"^/inspections/items/(\d+)$", "Removed an area from a checklist"),
     rule("PUT", r"^/inspections/(\d+)$", "Edited the details of checklist #{0}"),
+    rule("POST", r"^/listings$", "Made a vacancy listing"),
+    rule("PUT", r"^/listings/(\d+)$", "Edited listing #{0}"),
+    rule("DELETE", r"^/listings/(\d+)$", "Deleted listing #{0}"),
+    rule("POST", r"^/listings/(\d+)/photos$", "Added a photo to listing #{0}"),
+    rule("DELETE", r"^/listings/photos/(\d+)$", "Deleted a listing photo"),
+    rule("POST", r"^/listings/(\d+)/regenerate-link$", "Made a new link for listing #{0}"),
     rule("POST", r"^/account/change-password$", "Changed their password"),
+    rule("POST", r"^/account/2fa/setup$", "Started setting up 2-step login"),
+    rule("POST", r"^/account/2fa/enable$", "Turned on 2-step login"),
+    rule("POST", r"^/account/2fa/disable$", "Turned off 2-step login"),
 ]
 
 

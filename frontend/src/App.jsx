@@ -1,5 +1,5 @@
 // Import the page-switching tools
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 // Import the spinner icon
 import { Loader2 } from 'lucide-react'
 // Import our login information tools
@@ -27,11 +27,25 @@ import Tasks from './pages/Tasks'
 import Inspection from './pages/Inspection'
 import Account from './pages/Account'
 import Activity from './pages/Activity'
+import Listings from './pages/Listings'
+import PublicListing from './pages/PublicListing'
 
 // Decide which screen to show
 function Screens() {
+  // Know which address we are on
+  const location = useLocation()
   // Find out if we are still checking the saved token, and who is logged in
   const { user, loading } = useAuth()
+
+  // Public listing pages are for anyone, so they never ask for a login
+  if (location.pathname.startsWith('/l/')) {
+    return (
+      <Routes>
+        <Route path="/l/:token" element={<PublicListing />} />
+      </Routes>
+    )
+  }
+
   // While checking, show a spinner
   if (loading) {
     return (
@@ -72,6 +86,7 @@ function Screens() {
         <Route path="payments" element={<Payments />} />
         <Route path="more" element={<More />} />
         <Route path="owing" element={<Owing />} />
+        <Route path="listings" element={<Listings />} />
         <Route path="bills" element={<Bills />} />
         <Route path="repairs" element={<Repairs />} />
         <Route path="expenses" element={<Expenses />} />
