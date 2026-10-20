@@ -1,3 +1,5 @@
+# Import the tool that reads settings from the environment
+import os
 # Import the date and time tools
 from datetime import datetime, timedelta
 # Import the tool that finds the biggest value
@@ -12,6 +14,8 @@ WINDOW = timedelta(minutes=15)
 MAX_PER_EMAIL = 5
 # This many wrong passwords from one address (across all emails) lock that address
 MAX_PER_IP = 20
+# Behind a host's proxy every visitor looks like the same address, so on the server this rule is switched off with IP_LIMIT=off
+USE_IP_LIMIT = os.getenv("IP_LIMIT", "on").lower() != "off"
 
 
 # Work out how many seconds someone must still wait before trying again (0 means they may try now)
@@ -41,8 +45,8 @@ def seconds_locked(db, email: str, ip: str | None) -> int:
         release = email_failures[len(email_failures) - MAX_PER_EMAIL] + WINDOW
         wait = max(wait, int((release - now).total_seconds()) + 1)
 
-    # The wrong passwords from this address, oldest first
-    if ip:
+    # The wrong passwords from this address, oldest first (only when this rule is switched on)
+    if ip and USE_IP_LIMIT:
         ip_failures = [
             created
             for (created,) in db.query(LoginAttempt.created_at)

@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 # Import the tools that describe and check data shapes
 from pydantic import BaseModel, Field
+# Import the tool that lets us write a plain database command
+from sqlalchemy import text
 # Import the database session type
 from sqlalchemy.orm import Session
 
@@ -37,17 +39,35 @@ Base.metadata.create_all(bind=engine)
 # A fake password hash, so signing in takes the same time whether or not the email exists
 DUMMY_HASH = security.hash_password("not-a-real-password")
 
+# On the live server the automatic /docs pages are hidden (ENVIRONMENT=production)
+is_production = os.getenv("ENVIRONMENT", "").lower() == "production"
+
 # Create the app and give it a name
-app = FastAPI(title="M-nyumba")
+app = FastAPI(
+    title="M-nyumba",
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json",
+)
+
+# The websites allowed to talk to us: the laptop, plus the real website address when it is set
+allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+if frontend_url:
+    allowed_origins.append(frontend_url)
+# More website addresses can be added, separated by commas, in EXTRA_ORIGINS
+for extra in os.getenv("EXTRA_ORIGINS", "").split(","):
+    if extra.strip():
+        allowed_origins.append(extra.strip().rstrip("/"))
 
 # Record every change somebody makes (this is added first, so it sits inside the CORS layer below)
 app.add_middleware(audit.AuditMiddleware)
 
-# Allow our React app (running on port 5173) to call this API
+# Allow our React app to call this API
 app.add_middleware(
     CORSMiddleware,
     # The websites allowed to talk to us
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
     # We use tokens in headers, not cookies, so this stays off
     allow_credentials=False,
     # Allow all request types (GET, POST, PUT, DELETE)
@@ -128,15 +148,15 @@ class OtpRequest(BaseModel):
 
 # Work out the login name from what was typed: an email stays as it is, a phone number becomes a tenant's hidden login name
 def login_name(typed: str) -> str:
-    text = typed.strip().lower()
+    text_typed = typed.strip().lower()
     # Anything with an @ is an email
-    if "@" in text:
-        return text
+    if "@" in text_typed:
+        return text_typed
     # Otherwise try it as a phone number
     try:
-        phone = schemas.clean_phone(text)
+        phone = schemas.clean_phone(text_typed)
     except ValueError:
-        return text
+        return text_typed
     return portal_models.tenant_email(phone)
 
 
@@ -147,10 +167,26 @@ def home():
     return {"message": "M-nyumba is running"}
 
 
+# A quick check that the server is alive (the host uses this to know the app started)
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+# A deeper check that also talks to the database (an uptime monitor can use this one)
+@app.get("/health/db")
+def health_db(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database not reachable")
+    return {"status": "ok"}
+
+
 # Create a new account (anyone who registers here becomes an owner, unless sign-ups are closed)
 @app.post("/auth/register", response_model=schemas.UserOut, status_code=201)
 def register(data: schemas.UserCreate, db: Session = Depends(get_db)):
-    # Sign-ups can be closed by setting ALLOW_REGISTRATION=false in the .env file
+    # Sign-ups can be closed by setting ALLOW_REGISTRATION=false in the settings
     if os.getenv("ALLOW_REGISTRATION", "true").lower() == "false":
         raise HTTPException(status_code=403, detail="Sign-ups are closed")
     # Store emails in lowercase so "A@x.com" and "a@x.com" are the same

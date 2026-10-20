@@ -1,5 +1,5 @@
 // The address of our backend (other files use it to build links)
-export const API_URL = 'http://127.0.0.1:8000'
+export const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 // The name we save the login token under in the browser
 const TOKEN_KEY = 'mnyumba_token'
 

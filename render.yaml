@@ -1,0 +1,86 @@
+# This file tells Render what to build and run: a database, the backend, and the website.
+
+databases:
+  - name: mnyumba-db
+    # Frankfurt is the closest Render region to Kenya that I know of
+    region: frankfurt
+    plan: basic-256mb
+    # Start with a small disk (it can be made bigger later, but never smaller)
+    diskSizeGB: 1
+    # The same PostgreSQL version family we ran the tests on
+    postgresMajorVersion: "16"
+    # Only our own backend can reach the database (nobody from the internet)
+    ipAllowList: []
+
+services:
+  # The backend (the API)
+  - type: web
+    name: mnyumba-api
+    runtime: python
+    region: frankfurt
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Point the uploads folder at the permanent disk, then start the app
+    startCommand: mkdir -p /var/data/uploads && rm -rf uploads && ln -s /var/data/uploads uploads && uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    # The permanent disk for photos and documents
+    disk:
+      name: uploads
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      # Use Nairobi time for "today" (otherwise the server uses UTC and the date is wrong from midnight to 3am)
+      - key: TZ
+        value: Africa/Nairobi
+      - key: ENVIRONMENT
+        value: production
+      # Sign-ups are open only until the first accounts exist, then we switch this to false
+      - key: ALLOW_REGISTRATION
+        value: "true"
+      # Behind Render's proxy every visitor looks like the same address, so this rule must be off
+      - key: IP_LIMIT
+        value: "off"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mnyumba-db
+          property: connectionString
+      # These four are typed into the Render dashboard, never saved in this file
+      - key: SECRET_KEY
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: PUBLIC_API_URL
+        sync: false
+
+  # The website (just files, built from the frontend folder)
+  - type: web
+    name: mnyumba-web
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.0
+      - key: VITE_API_URL
+        sync: false
+    # Every page address should open the app (so refreshing /tenants or a /l/... link works)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    # A few safety headers for the website
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
