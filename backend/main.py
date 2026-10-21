@@ -31,6 +31,7 @@ from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
     documents, tasks, inspections, listings, portal, account, dashboard,
+    mpesa,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -124,6 +125,8 @@ app.include_router(portal.notices_router)
 app.include_router(account.router)
 # Plug in the dashboard endpoint
 app.include_router(dashboard.router)
+# Plug in the M-Pesa payment endpoints
+app.include_router(mpesa.router)
 
 
 # What we send back after a sign-in step: either a login token, or a request for the 6-digit code
