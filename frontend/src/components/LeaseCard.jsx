@@ -5,14 +5,25 @@ import { Link } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { ChevronDown, ChevronUp, ClipboardCheck, Plus, Receipt, Trash2, Wallet } from 'lucide-react'
+import { ChevronDown, ChevronUp, ClipboardCheck, Plus, Receipt, Smartphone, Trash2, Wallet } from 'lucide-react'
 // Import our own files
-import { createCharge, createPayment, deleteCharge, deletePayment, endLease, getCharges, getLeaseInspections, getPayments } from '../api'
+import {
+  createCharge,
+  createPayment,
+  deleteCharge,
+  deletePayment,
+  endLease,
+  getCharges,
+  getLeaseInspections,
+  getMpesaEnabled,
+  getPayments,
+} from '../api'
 import { CHARGE_LABELS, METHOD_LABELS, formatDate, money } from '../format'
 import BalanceBadge from './BalanceBadge'
 import ChargeForm from './ChargeForm'
 import ConfirmDialog from './ConfirmDialog'
 import Modal from './Modal'
+import MpesaPrompt from './MpesaPrompt'
 import PaymentForm from './PaymentForm'
 
 // Say how far along a checklist is
@@ -28,6 +39,8 @@ export default function LeaseCard({ lease, unitInfo, onChanged }) {
   const [payments, setPayments] = useState(null)
   // The move-in and move-out checklists (nothing until they arrive)
   const [inspections, setInspections] = useState(null)
+  // Whether the "Request M-Pesa" button is available to this owner
+  const [mpesaOn, setMpesaOn] = useState(false)
   // An error message if the statement could not load
   const [statementError, setStatementError] = useState('')
   // Whether to show the whole statement or only the latest few rows
@@ -36,6 +49,7 @@ export default function LeaseCard({ lease, unitInfo, onChanged }) {
   const [paying, setPaying] = useState(false)
   const [charging, setCharging] = useState(false)
   const [ending, setEnding] = useState(false)
+  const [requesting, setRequesting] = useState(false)
   // The row chosen for deleting (nothing when closed)
   const [deleting, setDeleting] = useState(null)
 
@@ -66,6 +80,13 @@ export default function LeaseCard({ lease, unitInfo, onChanged }) {
       .then(setInspections)
       .catch(() => setInspections(null))
   }, [lease.id])
+
+  // Find out whether the M-Pesa button should show (if this fails, it stays hidden)
+  useEffect(() => {
+    getMpesaEnabled()
+      .then((result) => setMpesaOn(result.enabled))
+      .catch(() => setMpesaOn(false))
+  }, [])
 
   // After any change, reload the statement and tell the page to reload the balance
   async function refresh() {
@@ -145,6 +166,15 @@ export default function LeaseCard({ lease, unitInfo, onChanged }) {
 
       {/* The action buttons */}
       <div className="mt-4 flex flex-wrap gap-2">
+        {isActive && mpesaOn && (
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setRequesting(true)}
+            className="flex items-center gap-2 rounded-xl bg-forest-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-700"
+          >
+            <Smartphone size={16} /> Request M-Pesa
+          </motion.button>
+        )}
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={() => setPaying(true)}
@@ -240,6 +270,11 @@ export default function LeaseCard({ lease, unitInfo, onChanged }) {
           </>
         )}
       </div>
+
+      {/* Ask for an M-Pesa payment */}
+      <Modal open={requesting} title="Request M-Pesa payment" onClose={() => setRequesting(false)}>
+        {requesting && <MpesaPrompt mode="owner" leaseId={lease.id} balance={lease.balance} tenantPhone={lease.tenant_phone || ''} onPaid={refresh} />}
+      </Modal>
 
       {/* Record a payment */}
       <Modal open={paying} title="Record payment" onClose={() => setPaying(false)}>

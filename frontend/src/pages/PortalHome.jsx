@@ -5,11 +5,13 @@ import { Link } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Bell, Check, Copy, MessageCircle, Phone, Receipt, RefreshCw, Wallet, Wrench } from 'lucide-react'
+import { Bell, Check, Copy, MessageCircle, Phone, Receipt, RefreshCw, Smartphone, Wallet, Wrench } from 'lucide-react'
 // Import our own files
 import { useAuth } from '../AuthContext'
-import { getPortalHome, getPortalStatement } from '../api'
+import { getPayNowEnabled, getPortalHome, getPortalStatement } from '../api'
 import { formatDate, money, phoneLocal } from '../format'
+import Modal from '../components/Modal'
+import MpesaPrompt from '../components/MpesaPrompt'
 
 // Pick a greeting based on the time of day
 function greeting() {
@@ -104,6 +106,12 @@ export default function PortalHome() {
   const [home, setHome] = useState(null)
   // The error message, if loading failed
   const [error, setError] = useState('')
+  // Whether the "Pay now" button is available
+  const [payEnabled, setPayEnabled] = useState(false)
+  // The home the tenant is paying for (nothing when the panel is closed)
+  const [paying, setPaying] = useState(null)
+  // A number that goes up after each payment, so the statement reloads
+  const [version, setVersion] = useState(0)
 
   // Load the home screen
   const load = useCallback(() => {
@@ -117,6 +125,13 @@ export default function PortalHome() {
   useEffect(() => {
     load()
   }, [load])
+
+  // Find out whether "Pay now" should show (if this fails, it stays hidden)
+  useEffect(() => {
+    getPayNowEnabled()
+      .then((result) => setPayEnabled(result.enabled))
+      .catch(() => setPayEnabled(false))
+  }, [])
 
   // Use only the first name in the greeting
   const firstName = user.full_name.split(' ')[0]
@@ -168,6 +183,17 @@ export default function PortalHome() {
                   <p className="mt-3 text-sm text-forest-200">{owes ? 'You owe' : credit ? 'You are in credit' : 'Your balance'}</p>
                   <p className={`font-display text-5xl font-extrabold ${owes ? 'text-gold' : 'text-white'}`}>{money(Math.abs(tenancy.balance))}</p>
                   <p className="mt-2 text-sm text-forest-200">{owes ? 'Please pay as soon as you can.' : credit ? 'This will count against your next charges.' : 'You are all paid up. Thank you!'}</p>
+
+                  {/* Pay by M-Pesa prompt (only when they owe money and the landlord is switched on) */}
+                  {owes && payEnabled && (
+                    <button
+                      onClick={() => setPaying(tenancy)}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3.5 font-bold text-forest-900 shadow-lg transition hover:brightness-95"
+                    >
+                      <Smartphone size={18} /> Pay now with M-Pesa
+                    </button>
+                  )}
+
                   <div className="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-white/10 p-3 text-center">
                     <div>
                       <p className="text-[11px] text-forest-200">Rent</p>
@@ -187,7 +213,7 @@ export default function PortalHome() {
                 <div className="mt-4 rounded-3xl bg-paper p-5 shadow-sm">
                   <h2 className="font-display text-lg font-bold text-forest-900">Your statement</h2>
                   <div className="mt-2">
-                    <Statement leaseId={tenancy.lease_id} />
+                    <Statement key={`${tenancy.lease_id}-${version}`} leaseId={tenancy.lease_id} />
                   </div>
                 </div>
               </div>
@@ -268,6 +294,22 @@ export default function PortalHome() {
           </Link>
         </>
       )}
+
+      {/* Pay by M-Pesa */}
+      <Modal open={paying !== null} title="Pay with M-Pesa" onClose={() => setPaying(null)}>
+        {paying && (
+          <MpesaPrompt
+            mode="tenant"
+            leaseId={paying.lease_id}
+            balance={paying.balance}
+            tenantPhone={user.phone || ''}
+            onPaid={() => {
+              load()
+              setVersion((number) => number + 1)
+            }}
+          />
+        )}
+      </Modal>
     </div>
   )
 }

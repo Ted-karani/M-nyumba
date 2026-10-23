@@ -461,3 +461,18 @@ export const createNotice = (data) => sendJson('POST', '/notices', data)
 export const updateNotice = (id, data) => sendJson('PUT', `/notices/${id}`, data)
 // Delete a notice
 export const deleteNotice = (id) => request(`/notices/${id}`, { method: 'DELETE' })
+
+// ---------- M-PESA PAYMENT PROMPTS ----------
+
+// Is the "Request M-Pesa" button available to this owner?
+export const getMpesaEnabled = () => request('/mpesa/enabled')
+// Send a payment prompt to a tenant's phone (an owner does this)
+export const requestMpesa = (data) => sendJson('POST', '/mpesa/stk-push', data)
+// Check what happened to an owner's prompt
+export const getMpesaStatus = (id) => request(`/mpesa/status/${id}`)
+// Is the "Pay now" button available to this tenant?
+export const getPayNowEnabled = () => request('/portal/mpesa/enabled')
+// A tenant pays their own rent
+export const payNow = (data) => sendJson('POST', '/portal/mpesa/pay', data)
+// Check what happened to a tenant's own prompt
+export const getPayNowStatus = (id) => request(`/portal/mpesa/status/${id}`)
