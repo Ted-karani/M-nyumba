@@ -5,6 +5,8 @@ import { Loader2 } from 'lucide-react'
 // Import our login information tools
 import { AuthProvider, useAuth } from './AuthContext'
 // Import our screens
+import AccountGate from './components/AccountGate'
+import AdminGate from './components/AdminGate'
 import Layout from './components/Layout'
 import TenantGate from './components/TenantGate'
 import Login from './pages/Login'
@@ -36,6 +38,9 @@ import PortalHome from './pages/PortalHome'
 import PortalRepairs from './pages/PortalRepairs'
 import PortalNotices from './pages/PortalNotices'
 import PortalAccount from './pages/PortalAccount'
+import AdminOverview from './pages/AdminOverview'
+import AdminAccounts from './pages/AdminAccounts'
+import AdminRecords from './pages/AdminRecords'
 
 // Decide which screen to show
 function Screens() {
@@ -64,6 +69,24 @@ function Screens() {
   // Not logged in? Show the login screen
   if (!user) return <Login />
 
+  // The admin gets the admin pages (after 2-step login is on)
+  if (user.role === 'admin') {
+    return (
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="account" element={<Account />} />
+          <Route element={<AdminGate />}>
+            <Route index element={<AdminOverview />} />
+            <Route path="accounts" element={<AdminAccounts />} />
+            <Route path="records" element={<AdminRecords />} />
+            {/* Any other address goes back to the admin overview */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Route>
+      </Routes>
+    )
+  }
+
   // A tenant gets the portal (after choosing their own password if they still have a temporary one)
   if (user.role === 'tenant') {
     return (
@@ -86,46 +109,50 @@ function Screens() {
   if (user.role === 'caretaker') {
     return (
       <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<Work />} />
-          <Route path="repairs" element={<Repairs />} />
-          <Route path="leases/:leaseId/inspection/:kind" element={<Inspection />} />
-          <Route path="account" element={<Account />} />
-          {/* Any other address goes back to the caretaker home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+        <Route element={<AccountGate />}>
+          <Route element={<Layout />}>
+            <Route index element={<Work />} />
+            <Route path="repairs" element={<Repairs />} />
+            <Route path="leases/:leaseId/inspection/:kind" element={<Inspection />} />
+            <Route path="account" element={<Account />} />
+            {/* Any other address goes back to the caretaker home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
         </Route>
       </Routes>
     )
   }
 
-  // An owner gets everything
+  // An owner gets everything (after choosing their own password if they still have a temporary one)
   return (
     <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="properties" element={<Properties />} />
-        <Route path="properties/:id" element={<PropertyDetail />} />
-        <Route path="tenants" element={<Tenants />} />
-        <Route path="tenants/:id" element={<TenantDetail />} />
-        <Route path="leases/:leaseId/inspection/:kind" element={<Inspection />} />
-        <Route path="payments" element={<Payments />} />
-        <Route path="more" element={<More />} />
-        <Route path="owing" element={<Owing />} />
-        <Route path="listings" element={<Listings />} />
-        <Route path="notices" element={<Notices />} />
-        <Route path="portal-access" element={<PortalAccess />} />
-        <Route path="bills" element={<Bills />} />
-        <Route path="repairs" element={<Repairs />} />
-        <Route path="expenses" element={<Expenses />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="documents" element={<Documents />} />
-        <Route path="tasks" element={<Tasks />} />
-        <Route path="team" element={<Team />} />
-        <Route path="activity" element={<Activity />} />
-        <Route path="setup" element={<Setup />} />
-        <Route path="account" element={<Account />} />
-        {/* Any other address goes back to the dashboard */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+      <Route element={<AccountGate />}>
+        <Route element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="properties" element={<Properties />} />
+          <Route path="properties/:id" element={<PropertyDetail />} />
+          <Route path="tenants" element={<Tenants />} />
+          <Route path="tenants/:id" element={<TenantDetail />} />
+          <Route path="leases/:leaseId/inspection/:kind" element={<Inspection />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="more" element={<More />} />
+          <Route path="owing" element={<Owing />} />
+          <Route path="listings" element={<Listings />} />
+          <Route path="notices" element={<Notices />} />
+          <Route path="portal-access" element={<PortalAccess />} />
+          <Route path="bills" element={<Bills />} />
+          <Route path="repairs" element={<Repairs />} />
+          <Route path="expenses" element={<Expenses />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="documents" element={<Documents />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="team" element={<Team />} />
+          <Route path="activity" element={<Activity />} />
+          <Route path="setup" element={<Setup />} />
+          <Route path="account" element={<Account />} />
+          {/* Any other address goes back to the dashboard */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       </Route>
     </Routes>
   )

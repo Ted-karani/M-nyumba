@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Building2, LogOut, User } from 'lucide-react'
 // Import our login information and the menus
 import { useAuth } from '../AuthContext'
-import { CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR, TENANT_ITEMS } from '../nav'
+import { ADMIN_ITEMS, CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR, TENANT_ITEMS } from '../nav'
 
 // Is a menu item the current page? (a screen inside a section also lights up its item)
 function isActiveItem(pathname, item) {
@@ -22,10 +22,16 @@ export default function Layout() {
   // Know which page we are on, so we can animate when it changes
   const location = useLocation()
   // Each kind of person gets their own menu
-  const barItems = user.role === 'caretaker' ? CARETAKER_ITEMS : user.role === 'tenant' ? TENANT_ITEMS : OWNER_BAR
-  const sidebarItems = user.role === 'caretaker' ? CARETAKER_ITEMS : user.role === 'tenant' ? TENANT_ITEMS : OWNER_SIDEBAR
+  const menus = {
+    admin: { bar: ADMIN_ITEMS, sidebar: ADMIN_ITEMS, line: 'Admin' },
+    caretaker: { bar: CARETAKER_ITEMS, sidebar: CARETAKER_ITEMS, line: 'Caretaker' },
+    tenant: { bar: TENANT_ITEMS, sidebar: TENANT_ITEMS, line: 'Tenant' },
+  }
+  const menu = menus[user.role] || { bar: OWNER_BAR, sidebar: OWNER_SIDEBAR, line: user.email }
+  const barItems = menu.bar
+  const sidebarItems = menu.sidebar
   // The line under the name in the sidebar
-  const roleLine = user.role === 'caretaker' ? 'Caretaker' : user.role === 'tenant' ? 'Tenant' : user.email
+  const roleLine = menu.line
 
   return (
     <div className="min-h-screen lg:flex">

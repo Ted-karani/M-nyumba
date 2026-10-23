@@ -476,3 +476,35 @@ export const getPayNowEnabled = () => request('/portal/mpesa/enabled')
 export const payNow = (data) => sendJson('POST', '/portal/mpesa/pay', data)
 // Check what happened to a tenant's own prompt
 export const getPayNowStatus = (id) => request(`/portal/mpesa/status/${id}`)
+
+// ---------- ADMIN (YOUR OWN PAGES FOR RUNNING THE BUSINESS) ----------
+
+// Get the overview numbers
+export const getAdminOverview = () => request('/admin/overview')
+// Get the list of landlords
+export const getAdminAccounts = () => request('/admin/accounts')
+// Add a landlord (this gives back a temporary password, shown once)
+export const createAdminAccount = (data) => sendJson('POST', '/admin/accounts', data)
+// Change a landlord's plan, status, end date, unit limit, notes or message
+export const updateAdminAccount = (id, data) => sendJson('PUT', `/admin/accounts/${id}`, data)
+// Record a payment a landlord made to you (this extends their access)
+export const recordAdminPayment = (id, data) => sendJson('POST', `/admin/accounts/${id}/payments`, data)
+// Get the payments one landlord made
+export const getAdminAccountPayments = (id) => request(`/admin/accounts/${id}/payments`)
+// Get all the payments landlords made
+export const getAdminPayments = () => request('/admin/payments')
+// Make a new temporary password for a landlord
+export const resetAdminPassword = (id) => request(`/admin/accounts/${id}/reset-password`, { method: 'POST' })
+// Turn off a landlord's 2-step login
+export const resetAdminTwoStep = (id) => request(`/admin/accounts/${id}/reset-2fa`, { method: 'POST' })
+// Sign a landlord out of every device
+export const signOutAdminAccount = (id) => request(`/admin/accounts/${id}/sign-out`, { method: 'POST' })
+// Get the log of what you did
+export const getAdminEvents = () => request('/admin/events')
+
+// ---------- FIRST-TIME SETUP AND ACCOUNT STATUS (LANDLORDS AND CARETAKERS) ----------
+
+// Find out whether the landlord must choose a password, and whether the account is limited
+export const getAccountStatus = () => request('/setup/status')
+// Choose your own password the first time (this gives back a fresh token)
+export const changeFirstPassword = (data) => sendJson('POST', '/setup/change-password', data)

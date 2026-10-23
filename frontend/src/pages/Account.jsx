@@ -63,7 +63,7 @@ export default function Account() {
           <p className="truncate font-display text-xl font-bold">{user.full_name}</p>
           <p className="truncate text-sm text-forest-200">{user.email}</p>
           <span className="mt-1 inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold">
-            {user.role === 'owner' ? 'Owner' : 'Caretaker'}
+            {user.role === 'owner' ? 'Owner' : user.role === 'admin' ? 'Admin' : 'Caretaker'}
           </span>
         </div>
       </motion.div>

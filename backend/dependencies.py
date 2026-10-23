@@ -14,6 +14,7 @@ from database import SessionLocal
 # Import our own files
 import models
 import security
+from admin_models import enforce_account_rules
 from security_models import UserSecurity
 
 # Tell FastAPI where users log in to get a token
@@ -62,10 +63,16 @@ def get_current_user(request: Request, token: str = Depends(oauth2_scheme), db: 
         issued = float(payload.get("iat", 0))
         if issued < changed.replace(tzinfo=timezone.utc).timestamp():
             raise error
+    path = request.url.path
+    # Admins may only use the admin pages, their own account page, and /auth/me
+    if user.role == "admin":
+        if not (path.startswith("/admin/") or path.startswith("/account/") or path == "/auth/me"):
+            raise HTTPException(status_code=403, detail="This account can only use the admin pages")
     # Tenants may only use the tenant portal (everything else is closed to them, now and for anything we add later)
     if user.role == "tenant":
-        path = request.url.path
         if not (path.startswith("/portal/") or path == "/auth/me"):
             raise HTTPException(status_code=403, detail="This account can only use the tenant portal")
+    # The landlord's plan rules: suspended, first password, read-only, and the unit limit
+    enforce_account_rules(db, user, request)
     # Return the user so the endpoint knows who is asking
     return user

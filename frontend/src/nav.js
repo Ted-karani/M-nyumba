@@ -69,3 +69,10 @@ export const TENANT_ITEMS = [
   { to: '/repairs', label: 'Report a problem', short: 'Problems', icon: Wrench },
   { to: '/notices', label: 'Notices', icon: Bell },
 ]
+
+// What the admin sees (in both places)
+export const ADMIN_ITEMS = [
+  { to: '/', label: 'Overview', icon: LayoutDashboard },
+  { to: '/accounts', label: 'Landlords', icon: Users },
+  { to: '/records', label: 'Payments and log', short: 'Records', icon: History },
+]

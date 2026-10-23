@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 # Import our database tools
 from database import engine, Base
 # Import our own files
+import admin_models
 import audit
 import models
 import portal_models
@@ -30,8 +31,7 @@ from security_models import UserTotp
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
-    documents, tasks, inspections, listings, portal, account, dashboard,
-    mpesa,
+    documents, tasks, inspections, listings, portal, mpesa, admin, account, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -121,12 +121,16 @@ app.include_router(portal.tenant_router)
 app.include_router(portal.access_router)
 # Plug in the notice board endpoints
 app.include_router(portal.notices_router)
+# Plug in the M-Pesa endpoints
+app.include_router(mpesa.router)
+# Plug in the admin endpoints
+app.include_router(admin.admin_router)
+# Plug in the first-time setup and account status endpoints
+app.include_router(admin.setup_router)
 # Plug in the account endpoints (change password, 2-step login, activity log)
 app.include_router(account.router)
 # Plug in the dashboard endpoint
 app.include_router(dashboard.router)
-# Plug in the M-Pesa payment endpoints
-app.include_router(mpesa.router)
 
 
 # What we send back after a sign-in step: either a login token, or a request for the 6-digit code
@@ -238,6 +242,10 @@ def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Ses
     if user is None or not password_ok or not user.is_active:
         ratelimit.record(db, email, ip, success=False)
         raise HTTPException(status_code=401, detail="Wrong email or password")
+    # A suspended or closed business cannot sign in (we say why, now that the password was right)
+    blocked = admin_models.login_block_message(db, user)
+    if blocked:
+        raise HTTPException(status_code=403, detail=blocked)
     # If this person has 2-step login on, ask for the code before giving a token
     totp = db.query(UserTotp).filter(UserTotp.user_id == user.id, UserTotp.enabled.is_(True)).first()
     if totp is not None:
@@ -260,6 +268,10 @@ def login_verify(request: Request, data: OtpRequest, db: Session = Depends(get_d
     user = db.get(models.User, user_id)
     if user is None or not user.is_active:
         raise HTTPException(status_code=401, detail="This sign-in took too long. Please start again")
+    # A business that was suspended while the person was typing the code is shut out here too
+    blocked = admin_models.login_block_message(db, user)
+    if blocked:
+        raise HTTPException(status_code=403, detail=blocked)
     email = user.email.lower()
     # Guessing codes is limited like guessing passwords
     account.refuse_if_locked(db, email, ip)
