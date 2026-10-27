@@ -177,13 +177,13 @@ def home():
 
 
 # A quick check that the server is alive (the host uses this to know the app started)
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok"}
 
 
 # A deeper check that also talks to the database (an uptime monitor can use this one)
-@app.get("/health/db")
+@app.api_route("/health/db", methods=["GET", "HEAD"])
 def health_db(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
