@@ -18,6 +18,8 @@ from database import engine, Base
 # Import our own files
 import admin_models
 import audit
+# Start the error alerts (this does nothing unless SENTRY_DSN is set)
+import monitoring
 import models
 import portal_models
 import ratelimit
