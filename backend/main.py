@@ -37,7 +37,9 @@ from routers import (
 )
 
 # Create all the tables in the database if they don't exist yet
-Base.metadata.create_all(bind=engine)
+# Create the tables automatically on the laptop and in the tests (on the live server migrations do this, and AUTO_CREATE_TABLES is false there)
+if os.getenv("AUTO_CREATE_TABLES", "true").lower() != "false":
+    Base.metadata.create_all(bind=engine)
 
 # A fake password hash, so signing in takes the same time whether or not the email exists
 DUMMY_HASH = security.hash_password("not-a-real-password")
