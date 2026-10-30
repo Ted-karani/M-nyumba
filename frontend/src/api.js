@@ -508,3 +508,10 @@ export const getAdminEvents = () => request('/admin/events')
 export const getAccountStatus = () => request('/setup/status')
 // Choose your own password the first time (this gives back a fresh token)
 export const changeFirstPassword = (data) => sendJson('POST', '/setup/change-password', data)
+
+// ---------- QUICK SETUP (ADD A WHOLE BUILDING AT ONCE) ----------
+
+// Show what would be created for a building and its units, without saving anything
+export const previewBuilding = (data) => sendJson('POST', '/quick-setup/preview', data)
+// Create the building (if it is new) and all its units
+export const createBuilding = (data) => sendJson('POST', '/quick-setup/building', data)

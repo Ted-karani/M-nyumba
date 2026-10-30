@@ -32,7 +32,7 @@ from security_models import UserTotp
 # Import all the endpoint groups
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
-    maintenance, staff, caretakers, onboarding, reminders, expenses, reports,
+    maintenance, staff, caretakers, onboarding, quicksetup, reminders, expenses, reports,
     documents, tasks, inspections, listings, portal, mpesa, admin, account, dashboard,
 )
 
@@ -103,6 +103,8 @@ app.include_router(staff.router)
 app.include_router(caretakers.router)
 # Plug in the existing-tenant setup endpoint
 app.include_router(onboarding.router)
+# Plug in the quick setup endpoints (add a whole building at once)
+app.include_router(quicksetup.router)
 # Plug in the reminder endpoints
 app.include_router(reminders.router)
 # Plug in the expense endpoints

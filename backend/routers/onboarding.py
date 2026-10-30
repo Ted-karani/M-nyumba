@@ -1,3 +1,5 @@
+# Import the tool that finds the nearest spelling
+import difflib
 # Import the tool that checks text patterns
 import re
 # Import the date tool
@@ -73,8 +75,8 @@ class ExistingTenantRow(BaseModel):
     phone: str
     # The tenant's ID number (optional)
     id_number: str | None = None
-    # The monthly rent
-    rent_amount: int = Field(gt=0)
+    # The monthly rent (leave it empty when the unit already exists and has its rent set)
+    rent_amount: int = Field(default=0, ge=0)
     # The deposit they paid (kept on the lease for the record, never charged again)
     deposit_amount: int = Field(default=0, ge=0)
     # What they owe today
@@ -212,7 +214,10 @@ def plan_rows(db: Session, owner: models.User, raw_rows: list[dict]):
         # The property must be one of theirs
         prop = properties.get(row.property_name.strip().lower())
         if prop is None:
-            fail(number, raw, f"Property '{row.property_name.strip()}' was not found. Add it on the Properties page first")
+            # Suggest the nearest building name, in case it is only a spelling mistake
+            nearest = difflib.get_close_matches(row.property_name.strip().lower(), list(properties.keys()), n=1, cutoff=0.6)
+            hint = f" Did you mean '{properties[nearest[0]].name}'?" if nearest else ""
+            fail(number, raw, f"Property '{row.property_name.strip()}' was not found.{hint} New buildings are added with Quick setup (More, then Quick setup)")
             continue
         # The same unit cannot appear twice in one list
         unit_key = (prop.id, row.unit_number.strip().lower())
@@ -236,6 +241,15 @@ def plan_rows(db: Session, owner: models.User, raw_rows: list[dict]):
         if unit is not None and unit.status == "maintenance":
             fail(number, raw, f"Unit {unit.unit_number} is under repair. Set it to vacant first")
             continue
+        # An empty rent means "use the unit's own rent"
+        if row.rent_amount == 0:
+            if unit is None:
+                fail(number, raw, f"Rent amount is needed, because unit {row.unit_number.strip()} does not exist yet")
+                continue
+            if unit.rent_amount <= 0:
+                fail(number, raw, f"No rent is set for unit {unit.unit_number}. Write the rent amount in your list")
+                continue
+            row.rent_amount = unit.rent_amount
         # Find the tenant if they already exist (matched by phone number)
         tenant = (
             db.query(models.Tenant)

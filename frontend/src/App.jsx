@@ -21,6 +21,7 @@ import Repairs from './pages/Repairs'
 import Team from './pages/Team'
 import Work from './pages/Work'
 import Setup from './pages/Setup'
+import QuickSetup from './pages/QuickSetup'
 import More from './pages/More'
 import Owing from './pages/Owing'
 import Expenses from './pages/Expenses'
@@ -136,6 +137,7 @@ function Screens() {
           <Route path="leases/:leaseId/inspection/:kind" element={<Inspection />} />
           <Route path="payments" element={<Payments />} />
           <Route path="more" element={<More />} />
+          <Route path="quick-setup" element={<QuickSetup />} />
           <Route path="owing" element={<Owing />} />
           <Route path="listings" element={<Listings />} />
           <Route path="notices" element={<Notices />} />

@@ -87,6 +87,8 @@ RULES = [
     rule("PUT", r"^/portal-access/(\d+)$", "Switched portal access on or off for tenant #{0}"),
     rule("POST", r"^/portal/repairs$", "Reported a repair from the tenant portal"),
     rule("POST", r"^/portal/change-password$", "Changed their password"),
+    rule("POST", r"^/quick-setup/preview$", None),
+    rule("POST", r"^/quick-setup/building$", "Set up a building with its units"),
     rule("POST", r"^/account/change-password$", "Changed their password"),
     rule("POST", r"^/account/2fa/setup$", "Started setting up 2-step login"),
     rule("POST", r"^/account/2fa/enable$", "Turned on 2-step login"),

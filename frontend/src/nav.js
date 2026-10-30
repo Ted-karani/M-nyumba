@@ -16,6 +16,7 @@ import {
   Newspaper,
   Receipt,
   Smartphone,
+  Sparkles,
   UserCog,
   Users,
   Wallet,
@@ -30,6 +31,7 @@ export const PAYMENTS = { to: '/payments', label: 'Payments', icon: Wallet }
 
 // Everything else lives under "More" (add new screens here)
 export const MORE_ITEMS = [
+  { to: '/quick-setup', label: 'Quick setup', icon: Sparkles, description: 'Add a whole building and all its units in a minute' },
   { to: '/owing', label: 'Who owes me', icon: BellRing, description: 'Remind everyone who is late, in a few taps' },
   { to: '/listings', label: 'Vacancy listings', icon: Megaphone, description: 'Advertise empty units with photos and a link' },
   { to: '/notices', label: 'Notice board', icon: Newspaper, description: 'Announcements your tenants can read' },
