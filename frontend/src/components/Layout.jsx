@@ -3,10 +3,11 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, LogOut, User } from 'lucide-react'
-// Import our login information and the menus
+import { LogOut, User } from 'lucide-react'
+// Import our login information, the menus, and the logo
 import { useAuth } from '../AuthContext'
 import { ADMIN_ITEMS, CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR, TENANT_ITEMS } from '../nav'
+import Wordmark from './Logo'
 
 // Is a menu item the current page? (a screen inside a section also lights up its item)
 function isActiveItem(pathname, item) {
@@ -39,12 +40,9 @@ export default function Layout() {
       <aside className="sticky top-0 hidden h-screen w-64 flex-col justify-between overflow-y-auto bg-forest-900 p-6 text-white lg:flex">
         <div>
           {/* The logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gold text-forest-900">
-              <Building2 size={20} />
-            </div>
-            <span className="font-display text-xl font-bold">M-nyumba</span>
-          </div>
+          <Link to="/" aria-label="Home">
+            <Wordmark onDark size="lg" />
+          </Link>
           {/* The menu links */}
           <nav className="mt-10 space-y-1">
             {sidebarItems.map(({ to, label, icon: Icon }) => (
@@ -97,12 +95,9 @@ export default function Layout() {
       <div className="min-w-0 flex-1">
         {/* The top bar on phones: logo, account, and logout */}
         <header className="flex items-center justify-between px-5 pt-5 lg:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-forest-900 text-gold">
-              <Building2 size={18} />
-            </div>
-            <span className="font-display text-lg font-bold text-forest-900">M-nyumba</span>
-          </div>
+          <Link to="/" aria-label="Home">
+            <Wordmark size="sm" />
+          </Link>
           <div className="flex items-center gap-2">
             <Link
               to="/account"

@@ -116,7 +116,7 @@ export default function Reports() {
     <div>
       {/* The words that appear at the top of the printed page */}
       <div className="print-only mb-4 border-b border-forest-200 pb-3">
-        <p className="font-display text-2xl font-bold text-forest-900">M-nyumba monthly statement</p>
+        <p className="font-display text-2xl font-bold text-forest-900">EstateLoom monthly statement</p>
         <p className="text-sm text-muted">
           {monthLabel(month)} · {scopeName} · prepared for {user.full_name}
           {report ? ` · made on ${formatDate(report.generated_on)}` : ''}

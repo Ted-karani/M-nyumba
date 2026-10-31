@@ -10,7 +10,7 @@ import pyotp
 import security
 
 # The name shown in the authenticator app
-ISSUER = "M-nyumba"
+ISSUER = "EstateLoom"
 # How many recovery codes we give
 RECOVERY_CODE_COUNT = 8
 

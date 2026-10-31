@@ -28,7 +28,7 @@ export default function PublicListing() {
     getPublicListing(token)
       .then((data) => {
         setListing(data)
-        document.title = `${data.title} · M-nyumba`
+        document.title = `${data.title} · EstateLoom`
       })
       .catch(() => setError('This listing is not available. It may have been taken or switched off.'))
   }, [token])
@@ -62,7 +62,7 @@ export default function PublicListing() {
   // Each photo's address (the photos are public, but only with the secret code)
   const photoUrl = (id) => `${API_URL}/public/listings/${token}/photos/${id}`
   // The message people send on WhatsApp
-  const hello = `Hello${listing.contact_name ? ` ${listing.contact_name.split(' ')[0]}` : ''}, I saw "${listing.title}" on M-nyumba. Is it still available?`
+  const hello = `Hello${listing.contact_name ? ` ${listing.contact_name.split(' ')[0]}` : ''}, I saw "${listing.title}" on EstateLoom. Is it still available?`
 
   return (
     <div className="min-h-screen bg-cream pb-28">
@@ -150,7 +150,7 @@ export default function PublicListing() {
           </div>
         )}
 
-        <p className="mt-6 text-center text-xs text-muted">Listing made with M-nyumba</p>
+        <p className="mt-6 text-center text-xs text-muted">Listing made with EstateLoom</p>
       </motion.div>
 
       {/* The contact buttons stay at the bottom of the screen */}

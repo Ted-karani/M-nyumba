@@ -295,7 +295,7 @@ export default function Inspection() {
     <div className="mx-auto max-w-3xl">
       {/* The words at the top of the printed page */}
       <div className="print-only mb-4 border-b border-forest-200 pb-3">
-        <p className="font-display text-2xl font-bold text-forest-900">M-nyumba {title.toLowerCase()}</p>
+        <p className="font-display text-2xl font-bold text-forest-900">EstateLoom {title.toLowerCase()}</p>
         <p className="text-sm text-muted">
           Tenant: {lease.tenant_name} · Unit {lease.unit_number}, {lease.property_name} · Walkthrough on {formatDate(current.done_on)}
           {current.tenant_present ? ' · tenant was present' : ''}

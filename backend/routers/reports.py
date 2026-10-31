@@ -445,7 +445,7 @@ def monthly_excel(
     # ---- SHEET 1: SUMMARY ----
     summary = workbook.active
     summary.title = "Summary"
-    summary.append(["M-nyumba monthly report"])
+    summary.append(["EstateLoom monthly report"])
     summary["A1"].font = Font(bold=True, size=14)
     summary.append(["Month", month])
     summary.append(["Property", report.property_name or "All properties"])

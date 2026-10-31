@@ -110,7 +110,7 @@ export default function PortalAccess() {
 
   // The message sent to the tenant on WhatsApp
   const message = granted
-    ? `Hello ${granted.tenant_name.split(' ')[0]}, you can now see your rent balance, your payment history and notices on M-nyumba.\n\nOpen: ${window.location.origin}\nSign in with your phone number ${phoneLocal(granted.phone)} and this temporary password: ${granted.temporary_password}\n\nYou will be asked to choose your own password.`
+    ? `Hello ${granted.tenant_name.split(' ')[0]}, you can now see your rent balance, your payment history and notices on EstateLoom.\n\nOpen: ${window.location.origin}\nSign in with your phone number ${phoneLocal(granted.phone)} and this temporary password: ${granted.temporary_password}\n\nYou will be asked to choose your own password.`
     : ''
 
   return (

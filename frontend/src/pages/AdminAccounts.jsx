@@ -82,7 +82,7 @@ export default function AdminAccounts() {
 
   // The message sent to the new landlord on WhatsApp
   const whatsapp = credentials
-    ? `Hello ${credentials.full_name.split(' ')[0]}, welcome to M-nyumba. Your sign-in:\n\nOpen: ${window.location.origin}\nEmail: ${credentials.email}\nTemporary password: ${credentials.temporary_password}\n\nYou will be asked to choose your own password.`
+    ? `Hello ${credentials.full_name.split(' ')[0]}, welcome to EstateLoom. Your sign-in:\n\nOpen: ${window.location.origin}\nEmail: ${credentials.email}\nTemporary password: ${credentials.temporary_password}\n\nYou will be asked to choose your own password.`
     : ''
 
   return (
@@ -91,7 +91,7 @@ export default function AdminAccounts() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-forest-900">Landlords</h1>
-          <p className="text-muted">Everyone who uses M-nyumba. You see counts, never their tenants’ details.</p>
+          <p className="text-muted">Everyone who uses EstateLoom. You see counts, never their tenants’ details.</p>
         </div>
         <motion.button whileTap={{ scale: 0.96 }} onClick={() => setAdding(true)} className="flex shrink-0 items-center gap-2 rounded-xl bg-forest-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-forest-900/20 hover:bg-forest-700">
           <Plus size={18} /> Add landlord

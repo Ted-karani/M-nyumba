@@ -59,7 +59,7 @@ export default function Notices() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-forest-900">Notice board</h1>
-          <p className="text-muted">Tenants with portal access see these when they open M-nyumba.</p>
+          <p className="text-muted">Tenants with portal access see these when they open EstateLoom.</p>
         </div>
         <motion.button whileTap={{ scale: 0.96 }} onClick={() => setAdding(true)} className="flex shrink-0 items-center gap-2 rounded-xl bg-forest-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-forest-900/20 hover:bg-forest-700">
           <Plus size={18} /> New notice

@@ -5,11 +5,12 @@ import { Outlet } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, KeyRound, Loader2, LogOut } from 'lucide-react'
+import { KeyRound, Loader2, LogOut } from 'lucide-react'
 // Import our own files
 import { useAuth } from '../AuthContext'
 import { changePortalPassword, getPortalStatus, saveToken } from '../api'
 import { Field, inputClass } from './Field'
+import Wordmark from './Logo'
 
 // The screen where a tenant chooses their own password for the first time
 function SetPassword({ name, onDone }) {
@@ -49,12 +50,7 @@ function SetPassword({ name, onDone }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream px-6 py-10">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-forest-900 text-gold">
-            <Building2 size={22} />
-          </div>
-          <span className="font-display text-2xl font-bold text-forest-900">M-nyumba</span>
-        </div>
+        <Wordmark size="lg" />
         <div className="mt-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-forest-100 text-forest-700">
           <KeyRound size={26} />
         </div>

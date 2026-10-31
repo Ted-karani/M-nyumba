@@ -48,7 +48,7 @@ export default function Team() {
 
   // The message the owner can send to the new caretaker
   const shareText = credentials
-    ? `Hello ${credentials.name.split(' ')[0]}, your M-nyumba login is ready.\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
+    ? `Hello ${credentials.name.split(' ')[0]}, your EstateLoom login is ready.\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
     : ''
 
   // Copy the login details to the clipboard

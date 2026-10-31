@@ -3,9 +3,11 @@ import { useState } from 'react'
 // Import the animation tools
 import { AnimatePresence, motion } from 'framer-motion'
 // Import the icons we use
-import { ArrowLeft, Building2, Eye, EyeOff, KeyRound, Loader2, ShieldCheck, BellRing, Wallet } from 'lucide-react'
-// Import our login information
+import { ArrowLeft, Eye, EyeOff, KeyRound, Loader2, ShieldCheck, BellRing, Wallet } from 'lucide-react'
+// Import our login information, the brand, and the logo
 import { useAuth } from '../AuthContext'
+import { BRAND } from '../brand'
+import Wordmark from '../components/Logo'
 
 // The look shared by every text box
 const inputClass =
@@ -126,16 +128,8 @@ export default function Login() {
         <div className="absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-gold/10" />
 
         {/* The logo and name */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative flex items-center gap-3"
-        >
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold text-forest-900">
-            <Building2 size={22} />
-          </div>
-          <span className="font-display text-2xl font-bold">M-nyumba</span>
+        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative">
+          <Wordmark onDark size="lg" />
         </motion.div>
 
         {/* The headline and selling points */}
@@ -185,7 +179,7 @@ export default function Login() {
             <p className="mt-1 text-muted">
               {useRecovery
                 ? 'Type one of your recovery codes. Each one works only once.'
-                : 'Open your authenticator app and type the 6-digit code for M-nyumba.'}
+                : `Open your authenticator app and type the 6-digit code for ${BRAND.name}.`}
             </p>
 
             <form onSubmit={handleCode} className="mt-8 space-y-4">
@@ -357,7 +351,7 @@ export default function Login() {
 
             {/* The link that switches between the two forms */}
             <p className="mt-6 text-center text-sm text-muted">
-              {isSignup ? 'Already have an account?' : 'New landlord on M-nyumba?'}{' '}
+              {isSignup ? 'Already have an account?' : `New landlord on ${BRAND.name}?`}{' '}
               <button type="button" onClick={switchMode} className="font-semibold text-forest-700 hover:underline">
                 {isSignup ? 'Sign in' : 'Create an account'}
               </button>

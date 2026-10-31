@@ -17,7 +17,7 @@ export default function More() {
   return (
     <div>
       <h1 className="text-3xl font-extrabold text-forest-900">More</h1>
-      <p className="text-muted">Everything else in M-nyumba.</p>
+      <p className="text-muted">Everything else in EstateLoom.</p>
       <motion.div variants={listAnimation} initial="hidden" animate="show" className="mt-6 grid gap-3 md:grid-cols-2">
         {MORE_ITEMS.map(({ to, label, icon: Icon, description }) => (
           <motion.div key={to} variants={itemAnimation}>

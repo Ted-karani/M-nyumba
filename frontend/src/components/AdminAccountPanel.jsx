@@ -138,7 +138,7 @@ export default function AdminAccountPanel({ account, onChanged }) {
   const state = STATE_STYLES[account.state]
   // The message sent to the landlord on WhatsApp after a new password
   const whatsapp = credentials
-    ? `Hello ${credentials.full_name.split(' ')[0]}, your M-nyumba sign-in:\n\nOpen: ${window.location.origin}\nEmail: ${credentials.email}\nTemporary password: ${credentials.temporary_password}\n\nYou will be asked to choose your own password.`
+    ? `Hello ${credentials.full_name.split(' ')[0]}, your EstateLoom sign-in:\n\nOpen: ${window.location.origin}\nEmail: ${credentials.email}\nTemporary password: ${credentials.temporary_password}\n\nYou will be asked to choose your own password.`
     : ''
 
   return (

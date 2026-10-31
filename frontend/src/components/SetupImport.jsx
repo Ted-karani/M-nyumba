@@ -112,7 +112,7 @@ export default function SetupImport({ properties }) {
         </ol>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
-            onClick={() => downloadText('mnyumba-tenants-example.csv', templateCsv(properties.length > 0 ? properties[0].name : 'Kinoru Apartments'))}
+            onClick={() => downloadText('estateloom-tenants-example.csv', templateCsv(properties.length > 0 ? properties[0].name : 'Kinoru Apartments'))}
             className="flex items-center gap-2 rounded-xl bg-forest-100 px-4 py-2.5 text-sm font-semibold text-forest-700 hover:bg-forest-200"
           >
             <Download size={16} /> Download example

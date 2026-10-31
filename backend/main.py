@@ -49,7 +49,7 @@ is_production = os.getenv("ENVIRONMENT", "").lower() == "production"
 
 # Create the app and give it a name
 app = FastAPI(
-    title="M-nyumba",
+    title="EstateLoom",
     docs_url=None if is_production else "/docs",
     redoc_url=None if is_production else "/redoc",
     openapi_url=None if is_production else "/openapi.json",
@@ -177,7 +177,7 @@ def login_name(typed: str) -> str:
 @app.get("/")
 def home():
     # Prove the server works
-    return {"message": "M-nyumba is running"}
+    return {"message": "EstateLoom is running"}
 
 
 # A quick check that the server is alive (the host uses this to know the app started)
