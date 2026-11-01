@@ -33,6 +33,8 @@ import Account from './pages/Account'
 import Activity from './pages/Activity'
 import Listings from './pages/Listings'
 import PublicListing from './pages/PublicListing'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
 import Notices from './pages/Notices'
 import PortalAccess from './pages/PortalAccess'
 import PortalHome from './pages/PortalHome'
@@ -58,7 +60,16 @@ function Screens() {
       </Routes>
     )
   }
-
+    // The Terms and Privacy Policy are public too, so they never ask for a login
+  const legalPath = location.pathname.replace(/\/$/, '')
+  if (legalPath === '/terms' || legalPath === '/privacy') {
+    return (
+      <Routes>
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+      </Routes>
+    )
+  }
   // While checking, show a spinner
   if (loading) {
     return (

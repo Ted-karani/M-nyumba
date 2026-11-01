@@ -93,6 +93,9 @@ export default function PortalAccount() {
           </button>
         </form>
         <p className="mt-3 text-xs text-muted">Forgot your password? Ask your landlord to make you a new one.</p>
+                <p className="mt-2 text-xs text-muted">
+          <a href="/privacy" className="underline">How your information is used</a>
+        </p>
       </div>
 
       <button onClick={signOut} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-paper py-3.5 font-semibold text-forest-700 shadow-sm hover:bg-forest-100">

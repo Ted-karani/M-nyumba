@@ -515,3 +515,10 @@ export const changeFirstPassword = (data) => sendJson('POST', '/setup/change-pas
 export const previewBuilding = (data) => sendJson('POST', '/quick-setup/preview', data)
 // Create the building (if it is new) and all its units
 export const createBuilding = (data) => sendJson('POST', '/quick-setup/building', data)
+
+// ---------- TERMS AND PRIVACY POLICY ----------
+
+// Find out whether the landlord must accept the Terms and Privacy Policy
+export const getLegalStatus = () => request('/legal/status')
+// Accept the current Terms and Privacy Policy
+export const acceptLegal = (data) => sendJson('POST', '/legal/accept', data)

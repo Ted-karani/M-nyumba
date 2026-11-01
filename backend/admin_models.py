@@ -13,6 +13,7 @@ from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Str
 from sqlalchemy.orm import Session
 
 # Import our own files
+import legal_models
 import models
 from database import Base
 from portal_models import TenantAccount
@@ -21,8 +22,8 @@ from portal_models import TenantAccount
 GRACE_DAYS = 7
 # The kinds of request that change things
 WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-# In read-only mode these addresses still work (changing your own password, 2-step login, and tenants paying)
-READ_ONLY_OK = ("/account/", "/setup/", "/portal/change-password", "/portal/mpesa/")
+# In read-only mode these addresses still work (changing your own password, 2-step login, accepting the Terms, and tenants paying)
+READ_ONLY_OK = ("/account/", "/setup/", "/legal/", "/portal/change-password", "/portal/mpesa/")
 # The addresses that make new units (so the unit limit can be checked)
 UNIT_CREATING = (re.compile(r"^/properties/\d+/units$"), re.compile(r"^/onboarding/existing-tenants$"))
 
@@ -169,32 +170,37 @@ def login_block_message(db: Session, user: models.User):
     return None
 
 
-# The account rules every signed-in request must pass: suspended, first password, read-only, and the unit limit
+# The account rules every signed-in request must pass: suspended, first password, the Terms, read-only, and the unit limit
 def enforce_account_rules(db: Session, user: models.User, request: Request):
     # Admins are not part of any landlord's business
     owner_id = owner_id_of(db, user)
     if owner_id is None:
         return
-    account = db.query(OwnerAccount).filter(OwnerAccount.owner_id == owner_id).first()
-    # Landlords with no account row yet are treated as active with no limits
-    if account is None:
-        return
     path = request.url.path
-    state, message = effective_state(account)
+    account = db.query(OwnerAccount).filter(OwnerAccount.owner_id == owner_id).first()
+    # A landlord with no account row yet counts as active with no limits (but the Terms below still apply to them)
+    if account is None:
+        state, message = "active", None
+    else:
+        state, message = effective_state(account)
     # Suspended and closed businesses are shut out completely
     if state == "suspended":
         raise HTTPException(status_code=403, detail=message or "This account is suspended. Please contact support.")
     if state == "closed":
         raise HTTPException(status_code=403, detail=message or "This account has been closed.")
     # A new landlord must choose their own password before anything else
-    if user.role == "owner" and account.must_change_password:
+    if account is not None and user.role == "owner" and account.must_change_password:
         if not (path.startswith("/setup/") or path == "/auth/me"):
             raise HTTPException(status_code=403, detail="Please choose your own password first")
+    # Landlords must accept the current Terms and Privacy Policy (when this is switched on), whether or not they have an account row
+    if user.role == "owner" and legal_models.enforced() and not legal_models.has_accepted_current(db, user.id):
+        if not (path.startswith("/legal/") or path.startswith("/setup/") or path == "/auth/me"):
+            raise HTTPException(status_code=403, detail="Please read and accept the Terms and Privacy Policy first")
     # Read-only means nothing can be changed (except the few things listed above)
     if state == "read_only" and request.method in WRITE_METHODS and not path.startswith(READ_ONLY_OK):
         raise HTTPException(status_code=403, detail=f"{message} You can look at everything, but not change anything.")
     # The unit limit
-    if account.unit_limit is not None and request.method == "POST" and any(pattern.match(path) for pattern in UNIT_CREATING):
+    if account is not None and account.unit_limit is not None and request.method == "POST" and any(pattern.match(path) for pattern in UNIT_CREATING):
         count = (
             db.query(func.count(models.Unit.id))
             .join(models.Property, models.Unit.property_id == models.Property.id)

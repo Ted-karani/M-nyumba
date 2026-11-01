@@ -5,10 +5,10 @@ import { Outlet } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { KeyRound, Loader2, LogOut, TriangleAlert } from 'lucide-react'
+import { CheckCircle2, KeyRound, Loader2, LogOut, ScrollText, TriangleAlert } from 'lucide-react'
 // Import our own files
 import { useAuth } from '../AuthContext'
-import { changeFirstPassword, getAccountStatus, saveToken } from '../api'
+import { acceptLegal, changeFirstPassword, getAccountStatus, getLegalStatus, saveToken } from '../api'
 import { Field, inputClass } from './Field'
 import Wordmark from './Logo'
 
@@ -84,21 +84,117 @@ function SetPassword({ name, onDone }) {
   )
 }
 
+// The screen where a landlord accepts the Terms and the Privacy Policy
+function AcceptTerms({ legal, onDone }) {
+  // The logout function
+  const { signOut } = useAuth()
+  // Whether the box is ticked
+  const [agreed, setAgreed] = useState(false)
+  // The error message, and whether we are waiting for the backend
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  // Run when the button is pressed
+  async function handleAccept() {
+    setError('')
+    setBusy(true)
+    try {
+      const result = await acceptLegal({ agree: true, terms_version: legal.terms_version, privacy_version: legal.privacy_version })
+      onDone(result)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-cream px-6 py-10">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <Wordmark size="lg" />
+        <div className="mt-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-forest-100 text-forest-700">
+          <ScrollText size={26} />
+        </div>
+        <h1 className="mt-4 text-3xl font-extrabold text-forest-900">One last step</h1>
+        <p className="mt-1 text-muted">Please read how EstateLoom works with your information, and agree to continue.</p>
+
+        {/* The main points, in a few words */}
+        <ul className="mt-5 space-y-3 rounded-2xl bg-paper p-5 text-sm text-ink/90 shadow-sm">
+          {[
+            'Your tenants’ details stay yours. We only handle them to run EstateLoom for you.',
+            'We never hold your rent money. Tenants pay your own Paybill or Till.',
+            'You are responsible for telling your tenants how you use their information.',
+            'If a subscription ends, your account becomes read-only. You can still look at and download your records.',
+          ].map((point) => (
+            <li key={point} className="flex items-start gap-2.5">
+              <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-forest-500" />
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+
+        <p className="mt-4 text-sm text-muted">
+          Read the full{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-forest-700 underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-forest-700 underline">
+            Privacy Policy
+          </a>{' '}
+          (they open in a new tab).
+        </p>
+
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-paper p-4 shadow-sm">
+          <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest-900" />
+          <span className="text-sm font-medium text-forest-900">I have read and I agree to the Terms of Service and the Privacy Policy.</span>
+        </label>
+
+        {error && (
+          <div role="alert" className="mt-4 rounded-xl bg-terracotta/10 px-4 py-3 text-sm font-medium text-terracotta">
+            {error}
+          </div>
+        )}
+        <button
+          onClick={handleAccept}
+          disabled={!agreed || busy}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-forest-900 py-3.5 font-semibold text-white hover:bg-forest-700 disabled:opacity-50"
+        >
+          {busy && <Loader2 size={18} className="animate-spin" />} Agree and continue
+        </button>
+        <button onClick={signOut} className="mt-4 flex w-full items-center justify-center gap-2 text-sm font-medium text-muted hover:text-forest-900">
+          <LogOut size={14} /> Log out
+        </button>
+      </motion.div>
+    </div>
+  )
+}
+
 // A gate around the landlord and caretaker screens
 export default function AccountGate() {
   // The logged-in user and the logout function
   const { user, signOut } = useAuth()
-  // The account status (nothing until it arrives)
+  // The account status, and the Terms status (nothing until they arrive)
   const [status, setStatus] = useState(null)
+  const [legal, setLegal] = useState(null)
   // The error message, if we could not find out
   const [error, setError] = useState('')
 
-  // Find out when the gate first appears
+  // Find out the account status when the gate first appears
   useEffect(() => {
     getAccountStatus()
       .then(setStatus)
       .catch((err) => setError(err.message))
   }, [])
+
+  // Once the first password has been chosen, find out about the Terms
+  const passwordDone = status !== null && !status.must_change_password
+  useEffect(() => {
+    if (!passwordDone) return
+    getLegalStatus()
+      .then(setLegal)
+      .catch((err) => setError(err.message))
+  }, [passwordDone])
 
   // If we could not find out (for example the account was just suspended), say so
   if (error) {
@@ -125,6 +221,18 @@ export default function AccountGate() {
   // A temporary password: choose a real one first
   if (status.must_change_password) {
     return <SetPassword name={user.full_name} onDone={() => setStatus({ ...status, must_change_password: false })} />
+  }
+  // Waiting for the Terms status
+  if (!legal) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-forest-700">
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    )
+  }
+  // The Terms must be accepted (when this is switched on)
+  if (legal.required && !legal.accepted) {
+    return <AcceptTerms legal={legal} onDone={setLegal} />
   }
   // Otherwise show the page, with a banner on top when the account is read-only
   return (

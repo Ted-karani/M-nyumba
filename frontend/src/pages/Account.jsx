@@ -108,6 +108,10 @@ export default function Account() {
 
       {/* 2-step login */}
       <TwoStepCard />
+            {/* The legal pages */}
+      <p className="mt-5 text-center text-sm text-muted">
+        <a href="/terms" className="font-semibold text-forest-700 hover:underline">Terms of Service</a> · <a href="/privacy" className="font-semibold text-forest-700 hover:underline">Privacy Policy</a>
+      </p>
 
       {/* A few safety tips */}
       <div className="mt-5 rounded-3xl bg-forest-100 p-6">

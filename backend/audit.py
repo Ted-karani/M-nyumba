@@ -89,6 +89,7 @@ RULES = [
     rule("POST", r"^/portal/change-password$", "Changed their password"),
     rule("POST", r"^/quick-setup/preview$", None),
     rule("POST", r"^/quick-setup/building$", "Set up a building with its units"),
+    rule("POST", r"^/legal/accept$", "Accepted the Terms and Privacy Policy"),
     rule("POST", r"^/account/change-password$", "Changed their password"),
     rule("POST", r"^/account/2fa/setup$", "Started setting up 2-step login"),
     rule("POST", r"^/account/2fa/enable$", "Turned on 2-step login"),

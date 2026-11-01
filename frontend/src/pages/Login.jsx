@@ -348,7 +348,10 @@ export default function Login() {
                 {isSignup ? 'Create account' : 'Sign in'}
               </motion.button>
             </form>
-
+                        {/* Links to the legal pages */}
+            <p className="mt-6 text-center text-xs text-muted">
+              <a href="/terms" className="hover:underline">Terms</a> · <a href="/privacy" className="hover:underline">Privacy</a>
+            </p>
             {/* The link that switches between the two forms */}
             <p className="mt-6 text-center text-sm text-muted">
               {isSignup ? 'Already have an account?' : `New landlord on ${BRAND.name}?`}{' '}
