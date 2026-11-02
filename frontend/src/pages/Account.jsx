@@ -9,6 +9,7 @@ import { useAuth } from '../AuthContext'
 import { changePassword } from '../api'
 import { Field, inputClass } from '../components/Field'
 import TwoStepCard from '../components/TwoStepCard'
+import DataExportCard from '../components/DataExportCard'
 import { initials } from '../format'
 
 // The page where you see your account and change your password
@@ -108,6 +109,8 @@ export default function Account() {
 
       {/* 2-step login */}
       <TwoStepCard />
+            {/* Download a copy of all your data (landlords only) */}
+      {user.role === 'owner' && <DataExportCard />}
             {/* The legal pages */}
       <p className="mt-5 text-center text-sm text-muted">
         <a href="/terms" className="font-semibold text-forest-700 hover:underline">Terms of Service</a> · <a href="/privacy" className="font-semibold text-forest-700 hover:underline">Privacy Policy</a>

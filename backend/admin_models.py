@@ -53,6 +53,8 @@ class OwnerAccount(Base):
     must_change_password = Column(Boolean, nullable=False, default=False)
     # When the account was closed
     closed_at = Column(DateTime, nullable=True)
+    # When closing started (the landlord then has 30 days to download their data before the account can be deleted)
+    closing_started_at = Column(DateTime, nullable=True)
     # When the row was made, and last changed
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

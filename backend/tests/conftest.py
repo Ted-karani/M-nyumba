@@ -22,7 +22,26 @@ os.environ["SECRET_KEY"] = "test-secret-key-not-for-real-use"
 os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 # Scrambling passwords is slow on purpose, so the tests use a small number to run fast
 os.environ["BCRYPT_ROUNDS"] = "4"
+
+# Pin every setting that could change how the tests behave, so a value in your .env file can never leak into them
 os.environ["ALLOW_REGISTRATION"] = "true"
+os.environ["AUTO_CREATE_TABLES"] = "true"
+os.environ["ENVIRONMENT"] = "test"
+os.environ["IP_LIMIT"] = "on"
+os.environ["TERMS_ENFORCED"] = "false"
+os.environ["MPESA_TRUST_CALLBACK"] = "false"
+os.environ["SENTRY_DSN"] = ""
+# The tests must never be able to reach Safaricom with your real keys (the M-Pesa tests set their own pretend ones)
+for _name in [
+    "MPESA_CONSUMER_KEY",
+    "MPESA_CONSUMER_SECRET",
+    "MPESA_SHORTCODE",
+    "MPESA_PASSKEY",
+    "MPESA_CALLBACK_URL",
+    "MPESA_CALLBACK_SECRET",
+    "MPESA_OWNER_EMAILS",
+]:
+    os.environ[_name] = ""
 
 from fastapi.testclient import TestClient  # noqa: E402
 

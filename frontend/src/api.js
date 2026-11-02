@@ -522,3 +522,14 @@ export const createBuilding = (data) => sendJson('POST', '/quick-setup/building'
 export const getLegalStatus = () => request('/legal/status')
 // Accept the current Terms and Privacy Policy
 export const acceptLegal = (data) => sendJson('POST', '/legal/accept', data)
+
+// ---------- CLOSING AND DELETING ACCOUNTS (ADMIN) ----------
+
+// See where closing stands for a landlord, with counts of what would be deleted
+export const getAdminClosing = (id) => request(`/admin/accounts/${id}/closing`)
+// Start closing: the account becomes read-only and the landlord has 30 days to download their data
+export const startAdminClosing = (id, note) => sendJson('POST', `/admin/accounts/${id}/start-closing`, { note })
+// Stop closing
+export const cancelAdminClosing = (id) => request(`/admin/accounts/${id}/cancel-closing`, { method: 'POST' })
+// Delete an account for good
+export const deleteAdminAccount = (id, data) => sendJson('POST', `/admin/accounts/${id}/delete`, data)

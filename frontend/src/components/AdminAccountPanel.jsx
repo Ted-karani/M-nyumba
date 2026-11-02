@@ -8,6 +8,7 @@ import { METHOD_OPTIONS, PLAN_LABELS, STATE_STYLES, accessText } from '../admin'
 import { formatDateTime } from '../inspection'
 import { formatDate, money, phoneLocal, todayISO } from '../format'
 import ConfirmDialog from './ConfirmDialog'
+import AdminClosingSection from './AdminClosingSection'
 import { Field, inputClass } from './Field'
 
 // A box with a title, used to group things
@@ -277,6 +278,8 @@ export default function AdminAccountPanel({ account, onChanged }) {
           </ul>
         )}
       </Section>
+            {/* Closing and deleting */}
+      <AdminClosingSection account={account} onChanged={onChanged} />
 
       {/* Help with signing in */}
       <Section title="Help them sign in">
