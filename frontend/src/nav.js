@@ -15,6 +15,7 @@ import {
   Megaphone,
   Newspaper,
   Receipt,
+  ShieldCheck,
   Smartphone,
   Sparkles,
   UserCog,
@@ -76,5 +77,6 @@ export const TENANT_ITEMS = [
 export const ADMIN_ITEMS = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/accounts', label: 'Landlords', icon: Users },
+  { to: '/activity', label: 'Sign-ups and sign-ins', short: 'Sign-ins', icon: ShieldCheck },
   { to: '/records', label: 'Payments and log', short: 'Records', icon: History },
 ]

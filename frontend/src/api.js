@@ -533,3 +533,12 @@ export const startAdminClosing = (id, note) => sendJson('POST', `/admin/accounts
 export const cancelAdminClosing = (id) => request(`/admin/accounts/${id}/cancel-closing`, { method: 'POST' })
 // Delete an account for good
 export const deleteAdminAccount = (id, data) => sendJson('POST', `/admin/accounts/${id}/delete`, data)
+
+// ---------- ADMIN: SIGN-UPS, SIGN-INS AND SECURITY ----------
+
+// Get the list of landlords with how they joined and whether they came back
+export const getAdminSignups = () => request('/admin/signups')
+// Get the feed of sign-ins, like getAdminSignins({ days: 7, owner_id: 3 })
+export const getAdminSignins = (filters = {}) => request(`/admin/signins${queryString(filters)}`)
+// Get who is failing to sign in
+export const getAdminSecurity = () => request('/admin/security')

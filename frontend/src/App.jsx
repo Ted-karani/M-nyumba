@@ -44,6 +44,7 @@ import PortalAccount from './pages/PortalAccount'
 import AdminOverview from './pages/AdminOverview'
 import AdminAccounts from './pages/AdminAccounts'
 import AdminRecords from './pages/AdminRecords'
+import AdminSignins from './pages/AdminSignins'
 
 // Decide which screen to show
 function Screens() {
@@ -91,6 +92,7 @@ function Screens() {
             <Route index element={<AdminOverview />} />
             <Route path="accounts" element={<AdminAccounts />} />
             <Route path="records" element={<AdminRecords />} />
+            <Route path="activity" element={<AdminSignins />} />
             {/* Any other address goes back to the admin overview */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

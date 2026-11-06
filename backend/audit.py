@@ -12,6 +12,7 @@ import models
 import security
 from database import SessionLocal
 from portal_models import TenantAccount
+from admin_models import AdminEvent
 from security_models import AuditLog
 
 # Only requests that change things are recorded (just looking at a page is not)
@@ -161,8 +162,14 @@ def write_entry(token: str, method: str, path: str, ip):
 
 
 # Record that someone signed in (tenants' sign-ins are not recorded: it is private and would fill the log)
+# Record that someone signed in (tenants' sign-ins are not recorded: it is private and would fill the log; the admin's go in the admin log)
 def log_signin(db, user, ip):
     if user.role == "tenant":
+        return
+    # The admin's own sign-ins are written in the admin log
+    if user.role == "admin":
+        db.add(AdminEvent(admin_id=user.id, owner_id=None, action="Admin signed in", detail=None))
+        db.commit()
         return
     owner_id = owner_id_for(db, user)
     if owner_id is None:
