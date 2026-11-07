@@ -23,6 +23,7 @@ import Team from './pages/Team'
 import Work from './pages/Work'
 import Setup from './pages/Setup'
 import QuickSetup from './pages/QuickSetup'
+import RentTax from './pages/RentTax'
 import More from './pages/More'
 import Owing from './pages/Owing'
 import Expenses from './pages/Expenses'
@@ -152,6 +153,7 @@ function Screens() {
           <Route path="payments" element={<Payments />} />
           <Route path="more" element={<More />} />
           <Route path="quick-setup" element={<QuickSetup />} />
+          <Route path="tax" element={<RentTax />} />
           <Route path="owing" element={<Owing />} />
           <Route path="listings" element={<Listings />} />
           <Route path="notices" element={<Notices />} />

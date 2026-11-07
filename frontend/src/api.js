@@ -542,3 +542,16 @@ export const getAdminSignups = () => request('/admin/signups')
 export const getAdminSignins = (filters = {}) => request(`/admin/signins${queryString(filters)}`)
 // Get who is failing to sign in
 export const getAdminSecurity = () => request('/admin/security')
+
+// ---------- RENTAL INCOME TAX ----------
+
+// Get the tax page for a month like "2026-10" (leave it out for the last month that is over)
+export const getTaxOverview = (period) => request(`/tax/overview${period ? `?period=${period}` : ''}`)
+// Save the tax settings (resident or not, the rate, and how each building is treated)
+export const saveTaxSettings = (data) => sendJson('PUT', '/tax/settings', data)
+// Mark a month as filed and paid
+export const saveTaxFiling = (period, data) => sendJson('PUT', `/tax/filings/${period}`, data)
+// Take back a "filed" mark
+export const deleteTaxFiling = (period) => request(`/tax/filings/${period}`, { method: 'DELETE' })
+// Download the Excel schedule for a month
+export const downloadTaxSchedule = (period) => downloadFile(`/tax/export?period=${period}`, `estateloom-rent-tax-${period}.xlsx`)
