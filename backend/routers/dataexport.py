@@ -30,7 +30,7 @@ from security_models import AuditLog
 router = APIRouter(prefix="/account", tags=["Account"])
 
 # Tables we never put in the export (sign-in secrets and attempts)
-EXCLUDE = {"user_security", "user_totp", "login_attempts"}
+EXCLUDE = {"user_security", "user_totp", "login_attempts", "idempotency_keys"}
 # The most file bytes we put in one export (bigger ones are prepared by hand)
 MAX_FILES_BYTES = 400 * 1024 * 1024
 # Text that starts like this could be read by Excel as a formula, so we put a ' in front

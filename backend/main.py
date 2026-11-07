@@ -20,6 +20,8 @@ import admin_models
 import audit
 # Start the error alerts (this does nothing unless SENTRY_DSN is set)
 import monitoring
+# Make sure a request sent twice only happens once
+import idempotency
 import models
 import portal_models
 import ratelimit
@@ -67,6 +69,8 @@ for extra in os.getenv("EXTRA_ORIGINS", "").split(","):
 
 # Record every change somebody makes (this is added first, so it sits inside the CORS layer below)
 app.add_middleware(audit.AuditMiddleware)
+# Repeat the old answer when the phone sends the same secret number again
+app.add_middleware(idempotency.IdempotencyMiddleware)
 
 # Allow our React app to call this API
 app.add_middleware(

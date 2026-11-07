@@ -9,6 +9,7 @@ import { useAuth } from '../AuthContext'
 import { changePassword } from '../api'
 import { Field, inputClass } from '../components/Field'
 import TwoStepCard from '../components/TwoStepCard'
+import OfflineCard from '../components/OfflineCard'
 import DataExportCard from '../components/DataExportCard'
 import { initials } from '../format'
 
@@ -111,6 +112,8 @@ export default function Account() {
       <TwoStepCard />
             {/* Download a copy of all your data (landlords only) */}
       {user.role === 'owner' && <DataExportCard />}
+            {/* Use the app without signal: install it, and save work for offline */}
+      {user.role !== 'tenant' && <OfflineCard />}
             {/* The legal pages */}
       <p className="mt-5 text-center text-sm text-muted">
         <a href="/terms" className="font-semibold text-forest-700 hover:underline">Terms of Service</a> · <a href="/privacy" className="font-semibold text-forest-700 hover:underline">Privacy Policy</a>

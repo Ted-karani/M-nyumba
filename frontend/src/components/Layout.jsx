@@ -4,9 +4,11 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 // Import the icons we use
 import { LogOut, User } from 'lucide-react'
-// Import our login information, the menus, and the logo
+// Import our login information, the menus, the logo, and the offline parts
 import { useAuth } from '../AuthContext'
 import { ADMIN_ITEMS, CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR, TENANT_ITEMS } from '../nav'
+import { beforeSignOut } from '../offline/engine'
+import OfflineBar from './OfflineBar'
 import Wordmark from './Logo'
 
 // Is a menu item the current page? (a screen inside a section also lights up its item)
@@ -22,6 +24,10 @@ export default function Layout() {
   const { user, signOut } = useAuth()
   // Know which page we are on, so we can animate when it changes
   const location = useLocation()
+  // Log out, but first send what is waiting (and warn if something would be lost)
+  async function handleSignOut() {
+    if (await beforeSignOut()) signOut()
+  }
   // Each kind of person gets their own menu
   const menus = {
     admin: { bar: ADMIN_ITEMS, sidebar: ADMIN_ITEMS, line: 'Admin' },
@@ -83,7 +89,7 @@ export default function Layout() {
           </Link>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={signOut}
+            onClick={handleSignOut}
             className="mt-4 flex w-full items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/20"
           >
             <LogOut size={16} /> Log out
@@ -93,6 +99,9 @@ export default function Layout() {
 
       {/* The main area */}
       <div className="min-w-0 flex-1">
+        {/* The bar that says when there is no signal, and what is waiting to be sent */}
+        <OfflineBar />
+
         {/* The top bar on phones: logo, account, and logout */}
         <header className="flex items-center justify-between px-5 pt-5 lg:hidden">
           <Link to="/" aria-label="Home">
@@ -108,7 +117,7 @@ export default function Layout() {
             </Link>
             <motion.button
               whileTap={{ scale: 0.92 }}
-              onClick={signOut}
+              onClick={handleSignOut}
               aria-label="Log out"
               className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
             >

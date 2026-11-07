@@ -1,3 +1,4 @@
+import './offline/register'
 // Import the page-switching tools
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 // Import the spinner icon
