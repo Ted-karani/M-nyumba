@@ -568,3 +568,20 @@ export const applyLateFees = (items) => sendJson('POST', '/late-fees/apply', { i
 export const waiveLateFee = (item) => sendJson('POST', '/late-fees/waive', item)
 // Get the latest fees that were added or waived
 export const getLateFeeHistory = () => request('/late-fees/history')
+
+// ---------- MOVE-OUT SETTLEMENTS (DEPOSIT REFUNDS) ----------
+
+// Get the tenants who moved out, with where each settlement stands
+export const getSettlements = () => request('/settlements')
+// Get one tenancy: the ledger figures and the settlement
+export const getSettlement = (leaseId) => request(`/settlements/lease/${leaseId}`)
+// Save a draft: { deposit_held, deductions: [{ label, amount }], notes }
+export const saveSettlement = (leaseId, data) => sendJson('PUT', `/settlements/lease/${leaseId}`, data)
+// Finalise (freeze the numbers)
+export const finalizeSettlement = (leaseId, data) => sendJson('POST', `/settlements/lease/${leaseId}/finalize`, data)
+// Open a final settlement again
+export const reopenSettlement = (leaseId) => request(`/settlements/lease/${leaseId}/reopen`, { method: 'POST' })
+// Record that the refund was paid: { amount, paid_on, method, reference, note }
+export const saveRefund = (leaseId, data) => sendJson('POST', `/settlements/lease/${leaseId}/refund`, data)
+// Take back the refund record
+export const deleteRefund = (leaseId) => request(`/settlements/lease/${leaseId}/refund`, { method: 'DELETE' })

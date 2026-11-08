@@ -78,3 +78,20 @@ h1, h2, h3 {
     box-shadow: none !important;
   }
 }
+
+/* When printing a statement, show only the statement */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
