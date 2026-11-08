@@ -555,3 +555,16 @@ export const saveTaxFiling = (period, data) => sendJson('PUT', `/tax/filings/${p
 export const deleteTaxFiling = (period) => request(`/tax/filings/${period}`, { method: 'DELETE' })
 // Download the Excel schedule for a month
 export const downloadTaxSchedule = (period) => downloadFile(`/tax/export?period=${period}`, `estateloom-rent-tax-${period}.xlsx`)
+
+// ---------- LATE FEES ----------
+
+// Get the late fee rule, and who is late right now
+export const getLateFees = () => request('/late-fees/preview')
+// Change the late fee rule
+export const saveLateFeeSettings = (data) => sendJson('PUT', '/late-fees/settings', data)
+// Add the late fees the landlord ticked (items look like { lease_id, period })
+export const applyLateFees = (items) => sendJson('POST', '/late-fees/apply', { items })
+// Waive a late fee, or take back one that was added
+export const waiveLateFee = (item) => sendJson('POST', '/late-fees/waive', item)
+// Get the latest fees that were added or waived
+export const getLateFeeHistory = () => request('/late-fees/history')
