@@ -50,6 +50,7 @@ import AdminOverview from './pages/AdminOverview'
 import AdminAccounts from './pages/AdminAccounts'
 import AdminRecords from './pages/AdminRecords'
 import AdminSignins from './pages/AdminSignins'
+import AdminDemo from './pages/AdminDemo'
 
 // Decide which screen to show
 function Screens() {
@@ -98,6 +99,7 @@ function Screens() {
             <Route path="accounts" element={<AdminAccounts />} />
             <Route path="records" element={<AdminRecords />} />
             <Route path="activity" element={<AdminSignins />} />
+            <Route path="demo" element={<AdminDemo />} />
             {/* Any other address goes back to the admin overview */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

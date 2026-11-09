@@ -585,3 +585,14 @@ export const reopenSettlement = (leaseId) => request(`/settlements/lease/${lease
 export const saveRefund = (leaseId, data) => sendJson('POST', `/settlements/lease/${leaseId}/refund`, data)
 // Take back the refund record
 export const deleteRefund = (leaseId) => request(`/settlements/lease/${leaseId}/refund`, { method: 'DELETE' })
+
+// ---------- DEMO LANDLORD (ADMIN) ----------
+
+// See whether the demo exists, and what is in it
+export const getAdminDemo = () => request('/admin/demo')
+// Build the demo landlord (returns the sign-in email and password, shown only once)
+export const createAdminDemo = () => request('/admin/demo', { method: 'POST' })
+// Wipe the demo and rebuild it with fresh dates
+export const resetAdminDemo = () => request('/admin/demo/reset', { method: 'POST' })
+// Remove the demo completely
+export const deleteAdminDemo = () => request('/admin/demo', { method: 'DELETE' })

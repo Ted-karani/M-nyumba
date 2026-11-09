@@ -84,5 +84,6 @@ export const ADMIN_ITEMS = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/accounts', label: 'Landlords', icon: Users },
   { to: '/activity', label: 'Sign-ups and sign-ins', short: 'Sign-ins', icon: ShieldCheck },
+  { to: '/demo', label: 'Demo landlord', short: 'Demo', icon: Sparkles },
   { to: '/records', label: 'Payments and log', short: 'Records', icon: History },
 ]

@@ -35,7 +35,7 @@ from security_models import UserTotp
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, quicksetup, reminders, expenses, reports,
-    documents, tasks, inspections, listings, portal, mpesa, admin, adminactivity, tax, latefees, settlements, legal, dataexport, closing, account, dashboard,
+    documents, tasks, inspections, listings, portal, mpesa, admin, adminactivity, tax, latefees, settlements, demo, legal, dataexport, closing, account, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -151,6 +151,8 @@ app.include_router(tax.router)
 app.include_router(latefees.router)
 # Plug in the move-out settlement endpoints
 app.include_router(settlements.router)
+# Plug in the demo landlord endpoints (admin only)
+app.include_router(demo.router)
 # Plug in the account endpoints (change password, 2-step login, activity log)
 app.include_router(account.router)
 # Plug in the dashboard endpoint
