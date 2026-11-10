@@ -596,3 +596,34 @@ export const createAdminDemo = () => request('/admin/demo', { method: 'POST' })
 export const resetAdminDemo = () => request('/admin/demo/reset', { method: 'POST' })
 // Remove the demo completely
 export const deleteAdminDemo = () => request('/admin/demo', { method: 'DELETE' })
+
+// ---------- REPAIR PHOTOS ----------
+
+// Landlords and caretakers: the photos of a repair
+export const getRepairPhotos = (repairId) => request(`/maintenance/${repairId}/photos`)
+// Landlords and caretakers: remove a photo
+export const deleteRepairPhoto = (photoId) => request(`/maintenance/photos/${photoId}`, { method: 'DELETE' })
+// Tenants: their own photos on one of their reports
+export const getPortalRepairPhotos = (repairId) => request(`/portal/repairs/${repairId}/photos`)
+// Tenants: remove one of their photos
+export const deletePortalRepairPhoto = (photoId) => request(`/portal/repairs/photos/${photoId}`, { method: 'DELETE' })
+// Send one picture to an address like "/portal/repairs/5/photos"
+export async function uploadRepairPhoto(path, file) {
+  const form = new FormData()
+  form.append('file', file, file.name)
+  const response = await fetch(`${API_URL}${path}`, { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: form })
+  // The login ran out: go back to the sign-in screen
+  if (response.status === 401) {
+    clearToken()
+    window.location.reload()
+    throw new Error('Please sign in again.')
+  }
+  let data = null
+  try {
+    data = await response.json()
+  } catch {
+    // No readable answer
+  }
+  if (!response.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'The photo could not be sent. Please try again.')
+  return data
+}

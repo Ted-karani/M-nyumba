@@ -1,3 +1,9 @@
+// Import the chosen language
+import { getLang } from './i18n'
+
+// The language to write dates in: Kiswahili or English
+const locale = () => (getLang() === 'sw' ? 'sw-KE' : 'en-GB')
+
 // Turn a number into shillings, like 48000 becomes "KSh 48,000"
 export function money(amount) {
   return `KSh ${Number(amount).toLocaleString('en-US')}`
@@ -6,7 +12,7 @@ export function money(amount) {
 // Turn a date like "2026-10-14" into "14 Oct 2026"
 export function formatDate(isoDate) {
   // Adding a time stops the date from shifting by a day in some time zones
-  return new Date(`${isoDate}T00:00:00`).toLocaleDateString('en-GB', {
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(locale(), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -54,7 +60,7 @@ export function nextPeriod(period) {
 export function monthLabel(period) {
   // Split "2026-10" into the year and the month number
   const [year, month] = period.split('-').map(Number)
-  return new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  return new Date(year, month - 1, 1).toLocaleDateString(locale(), { month: 'long', year: 'numeric' })
 }
 
 // Show a saved phone number the way people write it: 254712345678 becomes "0712 345 678"

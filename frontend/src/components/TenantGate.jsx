@@ -9,11 +9,14 @@ import { KeyRound, Loader2, LogOut } from 'lucide-react'
 // Import our own files
 import { useAuth } from '../AuthContext'
 import { changePortalPassword, getPortalStatus, saveToken } from '../api'
+import { useT } from '../i18n'
 import { Field, inputClass } from './Field'
+import LanguageSwitch from './LanguageSwitch'
 import Wordmark from './Logo'
 
 // The screen where a tenant chooses their own password for the first time
 function SetPassword({ name, onDone }) {
+  const t = useT()
   // The logout function
   const { signOut } = useAuth()
   // What has been typed so far
@@ -31,7 +34,7 @@ function SetPassword({ name, onDone }) {
     setError('')
     // The two new passwords must match
     if (next !== again) {
-      setError('The two new passwords are not the same.')
+      setError(t('The two new passwords are not the same.'))
       return
     }
     setBusy(true)
@@ -50,21 +53,22 @@ function SetPassword({ name, onDone }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream px-6 py-10">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+        <LanguageSwitch className="mb-6" />
         <Wordmark size="lg" />
         <div className="mt-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-forest-100 text-forest-700">
           <KeyRound size={26} />
         </div>
-        <h1 className="mt-4 text-3xl font-extrabold text-forest-900">Welcome, {name.split(' ')[0]}</h1>
-        <p className="mt-1 text-muted">Choose your own password so only you can see your rent details.</p>
+        <h1 className="mt-4 text-3xl font-extrabold text-forest-900">{t('Welcome, {name}', { name: name.split(' ')[0] })}</h1>
+        <p className="mt-1 text-muted">{t('Choose your own password so only you can see your rent details.')}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <Field label="The temporary password you were given">
+          <Field label={t('The temporary password you were given')}>
             <input className={inputClass} type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required autoComplete="current-password" />
           </Field>
-          <Field label="Your new password" hint="At least 8 characters, with some letters. Not a common password.">
+          <Field label={t('Your new password')} hint={t('At least 8 characters, with some letters. Not a common password.')}>
             <input className={inputClass} type="password" value={next} onChange={(e) => setNext(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password" />
           </Field>
-          <Field label="New password again">
+          <Field label={t('New password again')}>
             <input className={inputClass} type="password" value={again} onChange={(e) => setAgain(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password" />
           </Field>
           {error && (
@@ -73,11 +77,11 @@ function SetPassword({ name, onDone }) {
             </div>
           )}
           <button type="submit" disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-forest-900 py-3.5 font-semibold text-white hover:bg-forest-700 disabled:opacity-70">
-            {busy && <Loader2 size={18} className="animate-spin" />} Save my password
+            {busy && <Loader2 size={18} className="animate-spin" />} {t('Save my password')}
           </button>
         </form>
         <button onClick={signOut} className="mt-4 flex w-full items-center justify-center gap-2 text-sm font-medium text-muted hover:text-forest-900">
-          <LogOut size={14} /> Log out
+          <LogOut size={14} /> {t('Log out')}
         </button>
       </motion.div>
     </div>

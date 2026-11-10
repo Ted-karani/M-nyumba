@@ -4,10 +4,12 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 // Import the icons we use
 import { LogOut, User } from 'lucide-react'
-// Import our login information, the menus, the logo, and the offline parts
+// Import our login information, the menus, the language, the logo, and the offline parts
 import { useAuth } from '../AuthContext'
+import { useT } from '../i18n'
 import { ADMIN_ITEMS, CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR, TENANT_ITEMS } from '../nav'
 import { beforeSignOut } from '../offline/engine'
+import LanguageSwitch from './LanguageSwitch'
 import OfflineBar from './OfflineBar'
 import Wordmark from './Logo'
 
@@ -20,6 +22,7 @@ function isActiveItem(pathname, item) {
 
 // The frame around every screen: sidebar on desktop, bottom bar on phones
 export default function Layout() {
+  const t = useT()
   // Get the logged-in user and the logout function
   const { user, signOut } = useAuth()
   // Know which page we are on, so we can animate when it changes
@@ -32,13 +35,15 @@ export default function Layout() {
   const menus = {
     admin: { bar: ADMIN_ITEMS, sidebar: ADMIN_ITEMS, line: 'Admin' },
     caretaker: { bar: CARETAKER_ITEMS, sidebar: CARETAKER_ITEMS, line: 'Caretaker' },
-    tenant: { bar: TENANT_ITEMS, sidebar: TENANT_ITEMS, line: 'Tenant' },
+    tenant: { bar: TENANT_ITEMS, sidebar: TENANT_ITEMS, line: t('Tenant') },
   }
   const menu = menus[user.role] || { bar: OWNER_BAR, sidebar: OWNER_SIDEBAR, line: user.email }
   const barItems = menu.bar
   const sidebarItems = menu.sidebar
   // The line under the name in the sidebar
   const roleLine = menu.line
+  // Only tenants have Kiswahili screens so far
+  const isTenant = user.role === 'tenant'
 
   return (
     <div className="min-h-screen lg:flex">
@@ -46,7 +51,7 @@ export default function Layout() {
       <aside className="sticky top-0 hidden h-screen w-64 flex-col justify-between overflow-y-auto bg-forest-900 p-6 text-white lg:flex">
         <div>
           {/* The logo */}
-          <Link to="/" aria-label="Home">
+          <Link to="/" aria-label={t('Home')}>
             <Wordmark onDark size="lg" />
           </Link>
           {/* The menu links */}
@@ -73,7 +78,7 @@ export default function Layout() {
                       />
                     )}
                     <Icon size={18} className="relative" />
-                    <span className="relative">{label}</span>
+                    <span className="relative">{t(label)}</span>
                   </>
                 )}
               </NavLink>
@@ -82,17 +87,18 @@ export default function Layout() {
         </div>
         {/* The user (opens the account page) and the logout button */}
         <div className="mt-6">
+          {isTenant && <LanguageSwitch compact className="mb-4" />}
           <Link to="/account" className="block rounded-xl px-1 py-1 hover:bg-white/10">
             <p className="truncate text-sm font-semibold">{user.full_name}</p>
             <p className="truncate text-xs text-forest-200">{roleLine}</p>
-            <p className="mt-1 text-xs text-gold">My account and password</p>
+            <p className="mt-1 text-xs text-gold">{t('My account and password')}</p>
           </Link>
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleSignOut}
             className="mt-4 flex w-full items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/20"
           >
-            <LogOut size={16} /> Log out
+            <LogOut size={16} /> {t('Log out')}
           </motion.button>
         </div>
       </aside>
@@ -104,13 +110,14 @@ export default function Layout() {
 
         {/* The top bar on phones: logo, account, and logout */}
         <header className="flex items-center justify-between px-5 pt-5 lg:hidden">
-          <Link to="/" aria-label="Home">
+          <Link to="/" aria-label={t('Home')}>
             <Wordmark size="sm" />
           </Link>
           <div className="flex items-center gap-2">
+            {isTenant && <LanguageSwitch compact />}
             <Link
               to="/account"
-              aria-label="My account"
+              aria-label={t('My account')}
               className={`rounded-xl p-2.5 shadow-sm ${location.pathname === '/account' ? 'bg-forest-900 text-white' : 'bg-paper text-forest-700'}`}
             >
               <User size={18} />
@@ -118,7 +125,7 @@ export default function Layout() {
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={handleSignOut}
-              aria-label="Log out"
+              aria-label={t('Log out')}
               className="rounded-xl bg-paper p-2.5 text-forest-700 shadow-sm"
             >
               <LogOut size={18} />
@@ -163,7 +170,7 @@ export default function Layout() {
                   />
                 )}
                 <Icon size={20} />
-                <span className="max-w-full truncate">{item.short || item.label}</span>
+                <span className="max-w-full truncate">{t(item.short || item.label)}</span>
               </Link>
             )
           })}

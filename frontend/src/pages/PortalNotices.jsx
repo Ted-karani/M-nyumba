@@ -7,9 +7,11 @@ import { Bell, Pin } from 'lucide-react'
 // Import our own files
 import { getPortalNotices } from '../api'
 import { formatDate } from '../format'
+import { useT } from '../i18n'
 
 // The page where a tenant reads the notices from their landlord
 export default function PortalNotices() {
+  const t = useT()
   // The notices (nothing until they arrive)
   const [notices, setNotices] = useState(null)
   // The error message, if loading failed
@@ -24,8 +26,8 @@ export default function PortalNotices() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-3xl font-extrabold text-forest-900">Notices</h1>
-      <p className="text-muted">News and announcements from your landlord.</p>
+      <h1 className="text-3xl font-extrabold text-forest-900">{t('Notices')}</h1>
+      <p className="text-muted">{t('News and announcements from your landlord.')}</p>
 
       {error && <p className="mt-6 rounded-2xl bg-terracotta/10 p-4 text-terracotta">{error}</p>}
       {!notices && !error && <div className="mt-6 h-28 animate-pulse rounded-2xl bg-forest-100" />}
@@ -35,8 +37,8 @@ export default function PortalNotices() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-forest-100 text-forest-700">
             <Bell size={26} />
           </div>
-          <p className="mt-4 font-semibold text-forest-900">No notices right now</p>
-          <p className="mt-1 text-sm text-muted">When your landlord posts something, you will see it here.</p>
+          <p className="mt-4 font-semibold text-forest-900">{t('No notices right now')}</p>
+          <p className="mt-1 text-sm text-muted">{t('When your landlord posts something, you will see it here.')}</p>
         </div>
       )}
 
@@ -52,7 +54,7 @@ export default function PortalNotices() {
               <p className="mt-3 text-xs text-muted">
                 {formatDate(notice.posted_on)}
                 {notice.property_name ? ` · ${notice.property_name}` : ''}
-                {notice.expires_on ? ` · until ${formatDate(notice.expires_on)}` : ''}
+                {notice.expires_on ? ` · ${t('until {date}', { date: formatDate(notice.expires_on) })}` : ''}
               </p>
             </motion.div>
           ))}

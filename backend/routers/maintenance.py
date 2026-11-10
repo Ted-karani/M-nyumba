@@ -18,6 +18,8 @@ from dependencies import get_db, get_current_user
 # Reuse the owner check and the phone cleaner we wrote earlier
 from routers.properties import require_owner
 from schemas import clean_phone
+from repair_photo_models import RepairPhoto, remove_repair_photos
+from routers import documents
 
 # Make a group of endpoints that all start with /maintenance
 router = APIRouter(prefix="/maintenance", tags=["Maintenance"])
@@ -120,6 +122,8 @@ class RepairOut(BaseModel):
     created_at: datetime
     # The date it was fixed
     resolved_on: date | None
+    # How many photos are attached
+    photo_count: int = 0
 
 
 # Everything the repairs page needs
@@ -176,6 +180,17 @@ def load_item(db: Session, repair_id: int, user: models.User):
         raise HTTPException(status_code=404, detail="Repair not found")
     # Hand back the request and its related rows
     return row
+
+
+# Put the number of photos on each repair
+def with_photo_counts(db, items):
+    ids = [item.id for item in items]
+    if not ids:
+        return items
+    counts = dict(db.query(RepairPhoto.repair_id, func.count(RepairPhoto.id)).filter(RepairPhoto.repair_id.in_(ids)).group_by(RepairPhoto.repair_id).all())
+    for item in items:
+        item.photo_count = counts.get(item.id, 0)
+    return items
 
 
 # List the repairs this person may see (optionally only one status or one property)
@@ -243,7 +258,7 @@ def list_repairs(
         in_progress_count=counts["in_progress"],
         fixed_count=counts["fixed"],
         cost_this_month=int(cost_this_month),
-        items=[to_out(repair, prop, unit, creator, hide_cost) for repair, prop, unit, creator in rows],
+        items=with_photo_counts(db, [to_out(repair, prop, unit, creator, hide_cost) for repair, prop, unit, creator in rows]),
     )
 
 
@@ -360,6 +375,9 @@ def delete_repair(
     require_owner(current_user)
     # Find it, but only if it is in one of their properties
     repair, prop, unit, creator = load_item(db, repair_id, current_user)
-    # Delete it
+    # Remove its photos, and then the repair itself
+    names = remove_repair_photos(db, repair.id)
     db.delete(repair)
     db.commit()
+    for name in names:
+        (documents.UPLOAD_DIR / name).unlink(missing_ok=True)

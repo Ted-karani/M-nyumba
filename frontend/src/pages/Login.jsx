@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 // Import the icons we use
 import { ArrowLeft, Eye, EyeOff, KeyRound, Loader2, ShieldCheck, BellRing, Wallet } from 'lucide-react'
-// Import our login information, the brand, and the logo
+// Import our login information, the brand, the language, and the logo
 import { useAuth } from '../AuthContext'
 import { BRAND } from '../brand'
+import { useT } from '../i18n'
+import LanguageSwitch from '../components/LanguageSwitch'
 import Wordmark from '../components/Logo'
 
 // The look shared by every text box
@@ -25,6 +27,7 @@ function Field({ label, children }) {
 
 // The login and sign-up screen
 export default function Login() {
+  const t = useT()
   // Get the login functions
   const { signIn, signUp, completeOtp } = useAuth()
   // Which form is showing: "signin" or "signup"
@@ -140,35 +143,38 @@ export default function Login() {
           className="relative mt-10 lg:mt-0"
         >
           <h1 className="font-display text-3xl font-extrabold leading-tight lg:text-5xl">
-            Every house.
+            {t('Every house.')}
             <br />
-            Every payment.
+            {t('Every payment.')}
             <br />
-            <span className="text-gold">One place.</span>
+            <span className="text-gold">{t('One place.')}</span>
           </h1>
-          <p className="mt-4 max-w-md text-forest-200">
-            Know who has paid, what is vacant, and who is late, without the notebook.
-          </p>
+          <p className="mt-4 max-w-md text-forest-200">{t('Know who has paid, what is vacant, and who is late, without the notebook.')}</p>
           {/* These three only show on big screens */}
           <ul className="mt-8 hidden space-y-4 text-forest-100 lg:block">
             <li className="flex items-center gap-3">
-              <Wallet size={20} className="text-gold" /> Track rent, deposits and balances
+              <Wallet size={20} className="text-gold" /> {t('Track rent, deposits and balances')}
             </li>
             <li className="flex items-center gap-3">
-              <BellRing size={20} className="text-gold" /> See overdue tenants instantly
+              <BellRing size={20} className="text-gold" /> {t('See overdue tenants instantly')}
             </li>
             <li className="flex items-center gap-3">
-              <ShieldCheck size={20} className="text-gold" /> Your data stays private to you
+              <ShieldCheck size={20} className="text-gold" /> {t('Your data stays private to you')}
             </li>
           </ul>
         </motion.div>
 
         {/* A small footer line (desktop only) */}
-        <p className="relative hidden text-sm text-forest-200/70 lg:block">Built for landlords in Kenya</p>
+        <p className="relative hidden text-sm text-forest-200/70 lg:block">{t('Built for landlords in Kenya')}</p>
       </div>
 
       {/* The form side */}
-      <div className="flex items-center justify-center px-6 py-10">
+      <div className="relative flex items-center justify-center px-6 py-10">
+        {/* Choose English or Kiswahili */}
+        <div className="absolute right-4 top-4">
+          <LanguageSwitch />
+        </div>
+
         {step === 'code' ? (
           // The second step: the 6-digit code
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-sm">
@@ -219,7 +225,7 @@ export default function Login() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-forest-900 py-3.5 font-semibold text-white shadow-lg shadow-forest-900/20 transition hover:bg-forest-700 disabled:opacity-70"
               >
                 {busy && <Loader2 size={18} className="animate-spin" />}
-                Sign in
+                {t('Sign in')}
               </motion.button>
             </form>
 
@@ -243,8 +249,8 @@ export default function Login() {
         ) : (
           // The first step: email (or phone number) and password
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="w-full max-w-sm">
-            <h2 className="text-3xl font-bold text-forest-900">{isSignup ? 'Create your account' : 'Welcome back'}</h2>
-            <p className="mt-1 text-muted">{isSignup ? 'Start managing your properties.' : 'Sign in to see your properties or your rent.'}</p>
+            <h2 className="text-3xl font-bold text-forest-900">{isSignup ? 'Create your account' : t('Welcome back')}</h2>
+            <p className="mt-1 text-muted">{isSignup ? 'Start managing your properties.' : t('Sign in to see your properties or your rent.')}</p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4">
               {/* The name and phone boxes slide in only when signing up */}
@@ -283,26 +289,26 @@ export default function Login() {
                 )}
               </AnimatePresence>
 
-              <Field label={isSignup ? 'Email' : 'Email or phone number'}>
+              <Field label={isSignup ? 'Email' : t('Email or phone number')}>
                 <input
                   className={inputClass}
                   type={isSignup ? 'email' : 'text'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={isSignup ? 'you@example.com' : 'you@example.com or 0712 345 678'}
+                  placeholder={isSignup ? 'you@example.com' : 'you@example.com / 0712 345 678'}
                   required
                   autoComplete="username"
                 />
               </Field>
 
-              <Field label="Password">
+              <Field label={t('Password')}>
                 <div className="relative">
                   <input
                     className={`${inputClass} pr-12`}
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={isSignup ? 'At least 8 characters' : 'Your password'}
+                    placeholder={isSignup ? 'At least 8 characters' : t('Your password')}
                     required
                     minLength={isSignup ? 8 : undefined}
                     autoComplete={isSignup ? 'new-password' : 'current-password'}
@@ -320,7 +326,7 @@ export default function Login() {
               </Field>
 
               {/* A hint for tenants */}
-              {!isSignup && <p className="text-xs text-muted">Tenants: use the phone number your landlord has for you, and the password they sent you.</p>}
+              {!isSignup && <p className="text-xs text-muted">{t('Tenants: use the phone number your landlord has for you, and the password they sent you.')}</p>}
 
               {/* The error message fades in when something goes wrong */}
               <AnimatePresence>
@@ -345,13 +351,21 @@ export default function Login() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-forest-900 py-3.5 font-semibold text-white shadow-lg shadow-forest-900/20 transition hover:bg-forest-700 disabled:opacity-70"
               >
                 {busy && <Loader2 size={18} className="animate-spin" />}
-                {isSignup ? 'Create account' : 'Sign in'}
+                {isSignup ? 'Create account' : t('Sign in')}
               </motion.button>
             </form>
-                        {/* Links to the legal pages */}
+
+            {/* Links to the legal pages */}
             <p className="mt-6 text-center text-xs text-muted">
-              <a href="/terms" className="hover:underline">Terms</a> · <a href="/privacy" className="hover:underline">Privacy</a>
+              <a href="/terms" className="hover:underline">
+                {t('Terms')}
+              </a>{' '}
+              ·{' '}
+              <a href="/privacy" className="hover:underline">
+                {t('Privacy')}
+              </a>
             </p>
+
             {/* The link that switches between the two forms */}
             <p className="mt-6 text-center text-sm text-muted">
               {isSignup ? 'Already have an account?' : `New landlord on ${BRAND.name}?`}{' '}

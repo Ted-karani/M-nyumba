@@ -7,12 +7,14 @@ import { useAuth } from '../AuthContext'
 import { retryAll, syncNow } from '../offline/engine'
 import { lastPrepared, prepareOffline } from '../offline/prepare'
 import { useOfflineState } from '../offline/useOffline'
+import { useT } from '../i18n'
 import SyncPanel from './SyncPanel'
 
 // The slim bar at the top: says when there is no signal, and what is waiting to be sent
 export default function OfflineBar() {
   const { user } = useAuth()
   const state = useOfflineState()
+  const t = useT()
   const [panel, setPanel] = useState(false)
   // The one-time tip for caretakers, to save their checklists on the phone
   const [tip, setTip] = useState(false)
@@ -35,6 +37,16 @@ export default function OfflineBar() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // A tenant has nothing that waits to be sent: only say when there is no signal
+  if (user.role === 'tenant') {
+    return state.offline ? (
+      <div role="status" className="sticky top-0 z-20 flex items-center gap-3 bg-amber px-4 py-2.5 text-sm font-medium text-white">
+        <CloudOff size={18} className="shrink-0" />
+        <p className="flex-1">{t('No signal right now. Some things may not load until it returns.')}</p>
+      </div>
+    ) : null
   }
 
   const waiting = state.pending + state.failed

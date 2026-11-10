@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 // Import the animation tool
 import { motion } from 'framer-motion'
 // Import the icons we use
-import { Building2, Phone, Plus, RefreshCw, Wrench } from 'lucide-react'
+import { Building2, Camera, Phone, Plus, RefreshCw, Wrench } from 'lucide-react'
 // Import our own files
 import { useAuth } from '../AuthContext'
 import { createRepair, deleteRepair, getRepairs, getUnitDirectory, getWorkDirectory, updateRepair } from '../api'
@@ -14,6 +14,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { inputClass } from '../components/Field'
 import Modal from '../components/Modal'
 import RepairForm from '../components/RepairForm'
+import RepairPhotos from '../components/RepairPhotos'
 
 // How the list appears: the cards come in one after another
 const listAnimation = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
@@ -252,6 +253,11 @@ export default function Repairs() {
                       </span>
                     </p>
                     {item.description && <p className="mt-2 line-clamp-2 text-sm text-ink/80">{item.description}</p>}
+                    {item.photo_count > 0 && (
+                      <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-forest-700">
+                        <Camera size={13} /> {item.photo_count} photo{item.photo_count === 1 ? '' : 's'}
+                      </p>
+                    )}
                     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
                       {priorityInfo && (
                         <span className={`rounded-full px-2 py-0.5 font-semibold ${priorityInfo.style}`}>{priorityInfo.label}</span>
@@ -297,6 +303,11 @@ export default function Repairs() {
 
       {/* Edit a repair */}
       <Modal open={editing !== null} title="Update repair" onClose={() => setEditing(null)}>
+        {editing && (
+          <div className="mb-5">
+            <RepairPhotos repairId={editing.id} mode="staff" />
+          </div>
+        )}
         {editing && directory && (
           <RepairForm
             key={editing.id}

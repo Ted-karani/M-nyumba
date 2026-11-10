@@ -10,20 +10,14 @@ import { Bell, Check, Copy, MessageCircle, Phone, Receipt, RefreshCw, Smartphone
 import { useAuth } from '../AuthContext'
 import { getPayNowEnabled, getPortalHome, getPortalStatement } from '../api'
 import { formatDate, money, phoneLocal } from '../format'
+import { getLang, useT } from '../i18n'
+import { statementTitle } from '../i18n/statement'
 import Modal from '../components/Modal'
 import MpesaPrompt from '../components/MpesaPrompt'
 
-// Pick a greeting based on the time of day
-function greeting() {
-  // The current hour, from 0 to 23
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  return 'Good evening'
-}
-
 // A small button that copies some text
 function CopyButton({ text, label }) {
+  const t = useT()
   // True for a moment after copying
   const [copied, setCopied] = useState(false)
   // Copy the text
@@ -38,13 +32,14 @@ function CopyButton({ text, label }) {
   }
   return (
     <button onClick={copy} aria-label={label} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-forest-100 px-3 py-1.5 text-xs font-semibold text-forest-700 hover:bg-forest-200">
-      {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? 'Copied' : 'Copy'}
+      {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? t('Copied') : t('Copy')}
     </button>
   )
 }
 
 // The list of charges and payments for one home
 function Statement({ leaseId }) {
+  const t = useT()
   // The lines (nothing until they arrive)
   const [rows, setRows] = useState(null)
   // The error message
@@ -61,7 +56,7 @@ function Statement({ leaseId }) {
 
   if (error) return <p className="text-sm text-terracotta">{error}</p>
   if (!rows) return <div className="h-20 animate-pulse rounded-2xl bg-forest-100" />
-  if (rows.length === 0) return <p className="text-sm text-muted">Nothing here yet.</p>
+  if (rows.length === 0) return <p className="text-sm text-muted">{t('Nothing here yet.')}</p>
   // Show only the latest 8 unless asked for all
   const shown = showAll ? rows : rows.slice(0, 8)
 
@@ -74,7 +69,7 @@ function Statement({ leaseId }) {
               {row.kind === 'payment' ? <Wallet size={17} /> : <Receipt size={17} />}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-forest-900">{row.title}</p>
+              <p className="truncate text-sm font-semibold text-forest-900">{statementTitle(row.title, getLang())}</p>
               <p className="truncate text-xs text-muted">
                 {formatDate(row.date)}
                 {row.reference ? ` · ${row.reference}` : ''}
@@ -84,14 +79,14 @@ function Statement({ leaseId }) {
               <p className={`text-sm font-semibold ${row.kind === 'payment' ? 'text-forest-500' : 'text-forest-900'}`}>
                 {row.kind === 'payment' ? '−' : '+'} {money(row.amount)}
               </p>
-              <p className="text-[11px] text-muted">Balance {money(row.balance_after)}</p>
+              <p className="text-[11px] text-muted">{t('Balance {amount}', { amount: money(row.balance_after) })}</p>
             </div>
           </li>
         ))}
       </ul>
       {rows.length > 8 && (
         <button onClick={() => setShowAll(!showAll)} className="mt-2 text-sm font-medium text-forest-700 hover:underline">
-          {showAll ? 'Show less' : `Show all (${rows.length})`}
+          {showAll ? t('Show less') : t('Show all ({count})', { count: rows.length })}
         </button>
       )}
     </div>
@@ -100,6 +95,7 @@ function Statement({ leaseId }) {
 
 // The tenant's home screen
 export default function PortalHome() {
+  const t = useT()
   // The logged-in user
   const { user } = useAuth()
   // The data from the backend (nothing until it arrives)
@@ -133,21 +129,24 @@ export default function PortalHome() {
       .catch(() => setPayEnabled(false))
   }, [])
 
+  // Pick a greeting based on the time of day
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? t('Good morning') : hour < 17 ? t('Good afternoon') : t('Good evening')
   // Use only the first name in the greeting
   const firstName = user.full_name.split(' ')[0]
 
   return (
     <div className="mx-auto max-w-2xl">
-      <p className="text-muted">{greeting()}</p>
+      <p className="text-muted">{greeting}</p>
       <h1 className="text-3xl font-extrabold text-forest-900">{firstName}</h1>
 
       {/* If loading failed, show the message and a retry button */}
       {error && (
         <div className="mt-6 rounded-3xl bg-terracotta/10 p-6 text-terracotta">
-          <p className="font-semibold">Could not load your page</p>
+          <p className="font-semibold">{t('Could not load your page')}</p>
           <p className="mt-1 text-sm">{error}</p>
           <button onClick={load} className="mt-4 flex items-center gap-2 rounded-xl bg-terracotta px-4 py-2 text-sm font-semibold text-white">
-            <RefreshCw size={16} /> Try again
+            <RefreshCw size={16} /> {t('Try again')}
           </button>
         </div>
       )}
@@ -165,8 +164,8 @@ export default function PortalHome() {
           {/* No active home */}
           {home.tenancies.length === 0 && (
             <div className="mt-6 rounded-3xl bg-paper p-8 text-center shadow-sm">
-              <p className="font-semibold text-forest-900">You have no current tenancy</p>
-              <p className="mt-1 text-sm text-muted">If this looks wrong, please contact your landlord.</p>
+              <p className="font-semibold text-forest-900">{t('You have no current tenancy')}</p>
+              <p className="mt-1 text-sm text-muted">{t('If this looks wrong, please contact your landlord.')}</p>
             </div>
           )}
 
@@ -177,12 +176,10 @@ export default function PortalHome() {
             return (
               <div key={tenancy.lease_id} className="mt-6">
                 <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl bg-forest-900 p-6 text-white shadow-xl">
-                  <p className="text-sm text-forest-200">
-                    Unit {tenancy.unit_number} · {tenancy.property_name}
-                  </p>
-                  <p className="mt-3 text-sm text-forest-200">{owes ? 'You owe' : credit ? 'You are in credit' : 'Your balance'}</p>
+                  <p className="text-sm text-forest-200">{t('Unit {unit} · {property}', { unit: tenancy.unit_number, property: tenancy.property_name })}</p>
+                  <p className="mt-3 text-sm text-forest-200">{owes ? t('You owe') : credit ? t('You are in credit') : t('Your balance')}</p>
                   <p className={`font-display text-5xl font-extrabold ${owes ? 'text-gold' : 'text-white'}`}>{money(Math.abs(tenancy.balance))}</p>
-                  <p className="mt-2 text-sm text-forest-200">{owes ? 'Please pay as soon as you can.' : credit ? 'This will count against your next charges.' : 'You are all paid up. Thank you!'}</p>
+                  <p className="mt-2 text-sm text-forest-200">{owes ? t('Please pay as soon as you can.') : credit ? t('This will count against your next charges.') : t('You are all paid up. Thank you!')}</p>
 
                   {/* Pay by M-Pesa prompt (only when they owe money and the landlord is switched on) */}
                   {owes && payEnabled && (
@@ -190,28 +187,28 @@ export default function PortalHome() {
                       onClick={() => setPaying(tenancy)}
                       className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3.5 font-bold text-forest-900 shadow-lg transition hover:brightness-95"
                     >
-                      <Smartphone size={18} /> Pay now with M-Pesa
+                      <Smartphone size={18} /> {t('Pay now with M-Pesa')}
                     </button>
                   )}
 
                   <div className="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-white/10 p-3 text-center">
                     <div>
-                      <p className="text-[11px] text-forest-200">Rent</p>
+                      <p className="text-[11px] text-forest-200">{t('Rent')}</p>
                       <p className="text-sm font-bold">{money(tenancy.rent_amount)}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-forest-200">Charged</p>
+                      <p className="text-[11px] text-forest-200">{t('Charged')}</p>
                       <p className="text-sm font-bold">{money(tenancy.total_charged)}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-forest-200">Paid</p>
+                      <p className="text-[11px] text-forest-200">{t('Paid')}</p>
                       <p className="text-sm font-bold">{money(tenancy.total_paid)}</p>
                     </div>
                   </div>
                 </motion.div>
 
                 <div className="mt-4 rounded-3xl bg-paper p-5 shadow-sm">
-                  <h2 className="font-display text-lg font-bold text-forest-900">Your statement</h2>
+                  <h2 className="font-display text-lg font-bold text-forest-900">{t('Your statement')}</h2>
                   <div className="mt-2">
                     <Statement key={`${tenancy.lease_id}-${version}`} leaseId={tenancy.lease_id} />
                   </div>
@@ -222,32 +219,32 @@ export default function PortalHome() {
 
           {/* How to pay */}
           <div className="mt-4 rounded-3xl bg-paper p-5 shadow-sm">
-            <h2 className="font-display text-lg font-bold text-forest-900">How to pay</h2>
+            <h2 className="font-display text-lg font-bold text-forest-900">{t('How to pay')}</h2>
             {home.payment_info.paybill_number ? (
               <div className="mt-3 space-y-3">
                 <div className="flex items-center justify-between gap-3 rounded-2xl bg-cream p-4">
                   <div>
-                    <p className="text-xs text-muted">M-Pesa Paybill / Till number</p>
+                    <p className="text-xs text-muted">{t('M-Pesa Paybill / Till number')}</p>
                     <p className="font-display text-2xl font-bold tracking-wide text-forest-900">{home.payment_info.paybill_number}</p>
                   </div>
-                  <CopyButton text={home.payment_info.paybill_number} label="Copy the Paybill number" />
+                  <CopyButton text={home.payment_info.paybill_number} label={t('Copy the Paybill number')} />
                 </div>
                 {home.payment_info.account_hint && (
                   <div className="rounded-2xl bg-cream p-4">
-                    <p className="text-xs text-muted">Account number</p>
+                    <p className="text-xs text-muted">{t('Account number')}</p>
                     <p className="font-semibold text-forest-900">{home.payment_info.account_hint}</p>
                   </div>
                 )}
                 {home.payment_info.instructions && <p className="whitespace-pre-line text-sm text-ink/80">{home.payment_info.instructions}</p>}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-muted">Ask {home.payment_info.contact_name} how to pay.</p>
+              <p className="mt-2 text-sm text-muted">{t('Ask {name} how to pay.', { name: home.payment_info.contact_name })}</p>
             )}
             {/* Ask the landlord */}
             {home.payment_info.contact_phone && (
               <div className="mt-4 flex gap-2">
                 <a href={`tel:+${home.payment_info.contact_phone}`} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-forest-100 py-2.5 text-sm font-semibold text-forest-700 hover:bg-forest-200">
-                  <Phone size={15} /> Call {home.payment_info.contact_name.split(' ')[0]}
+                  <Phone size={15} /> {t('Call {name}', { name: home.payment_info.contact_name.split(' ')[0] })}
                 </a>
                 <a
                   href={`https://wa.me/${home.payment_info.contact_phone}`}
@@ -267,10 +264,10 @@ export default function PortalHome() {
             <div className="mt-4 rounded-3xl bg-paper p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="flex items-center gap-2 font-display text-lg font-bold text-forest-900">
-                  <Bell size={18} className="text-gold" /> Notices
+                  <Bell size={18} className="text-gold" /> {t('Notices')}
                 </h2>
                 <Link to="/notices" className="text-sm font-medium text-forest-700 hover:underline">
-                  See all
+                  {t('See all')}
                 </Link>
               </div>
               <div className="mt-3 space-y-3">
@@ -290,13 +287,13 @@ export default function PortalHome() {
 
           {/* A shortcut to report a problem */}
           <Link to="/repairs" className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-forest-100 py-4 font-semibold text-forest-700 hover:bg-forest-200">
-            <Wrench size={18} /> Report a problem in my home
+            <Wrench size={18} /> {t('Report a problem in my home')}
           </Link>
         </>
       )}
 
       {/* Pay by M-Pesa */}
-      <Modal open={paying !== null} title="Pay with M-Pesa" onClose={() => setPaying(null)}>
+      <Modal open={paying !== null} title={t('Pay with M-Pesa')} onClose={() => setPaying(null)}>
         {paying && (
           <MpesaPrompt
             mode="tenant"

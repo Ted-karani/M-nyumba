@@ -8,10 +8,13 @@ import { CheckCircle2, KeyRound, Loader2, LogOut } from 'lucide-react'
 import { useAuth } from '../AuthContext'
 import { changePortalPassword, saveToken } from '../api'
 import { Field, inputClass } from '../components/Field'
+import LanguageSwitch from '../components/LanguageSwitch'
 import { initials, phoneLocal } from '../format'
+import { useT } from '../i18n'
 
 // The page where a tenant sees their details and changes their password
 export default function PortalAccount() {
+  const t = useT()
   // Get the logged-in user and the logout function
   const { user, signOut } = useAuth()
   // What has been typed so far
@@ -31,7 +34,7 @@ export default function PortalAccount() {
     setDone(false)
     // The two new passwords must match
     if (next !== again) {
-      setError('The two new passwords are not the same.')
+      setError(t('The two new passwords are not the same.'))
       return
     }
     setBusy(true)
@@ -52,30 +55,36 @@ export default function PortalAccount() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="text-3xl font-extrabold text-forest-900">My account</h1>
+      <h1 className="text-3xl font-extrabold text-forest-900">{t('My account')}</h1>
 
       {/* Who you are */}
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mt-6 flex items-center gap-4 rounded-3xl bg-forest-900 p-6 text-white shadow-xl">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold font-display text-lg font-bold text-forest-900">{initials(user.full_name)}</div>
         <div className="min-w-0">
           <p className="truncate font-display text-xl font-bold">{user.full_name}</p>
-          <p className="truncate text-sm text-forest-200">Sign in with {phoneLocal(user.phone || '')}</p>
+          <p className="truncate text-sm text-forest-200">{t('Sign in with {phone}', { phone: phoneLocal(user.phone || '') })}</p>
         </div>
       </motion.div>
+
+      {/* The language */}
+      <div className="mt-5 flex items-center justify-between gap-3 rounded-3xl bg-paper p-5 shadow-sm">
+        <p className="font-display text-lg font-bold text-forest-900">{t('Language')}</p>
+        <LanguageSwitch />
+      </div>
 
       {/* Change password */}
       <div className="mt-5 rounded-3xl bg-paper p-6 shadow-sm">
         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-forest-900">
-          <KeyRound size={20} className="text-gold" /> Change your password
+          <KeyRound size={20} className="text-gold" /> {t('Change your password')}
         </h2>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <Field label="Your current password">
+          <Field label={t('Your current password')}>
             <input className={inputClass} type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required autoComplete="current-password" />
           </Field>
-          <Field label="New password" hint="At least 8 characters, with some letters. Not a common password.">
+          <Field label={t('New password')} hint={t('At least 8 characters, with some letters. Not a common password.')}>
             <input className={inputClass} type="password" value={next} onChange={(e) => setNext(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password" />
           </Field>
-          <Field label="New password again">
+          <Field label={t('New password again')}>
             <input className={inputClass} type="password" value={again} onChange={(e) => setAgain(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password" />
           </Field>
           {error && (
@@ -85,21 +94,23 @@ export default function PortalAccount() {
           )}
           {done && (
             <div role="status" className="flex items-center gap-2 rounded-xl bg-forest-100 px-4 py-3 text-sm font-medium text-forest-700">
-              <CheckCircle2 size={18} /> Your password was changed. Other devices were signed out.
+              <CheckCircle2 size={18} /> {t('Your password was changed. Other devices were signed out.')}
             </div>
           )}
           <button type="submit" disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-forest-900 py-3.5 font-semibold text-white hover:bg-forest-700 disabled:opacity-70">
-            {busy && <Loader2 size={18} className="animate-spin" />} Change password
+            {busy && <Loader2 size={18} className="animate-spin" />} {t('Change password')}
           </button>
         </form>
-        <p className="mt-3 text-xs text-muted">Forgot your password? Ask your landlord to make you a new one.</p>
-                <p className="mt-2 text-xs text-muted">
-          <a href="/privacy" className="underline">How your information is used</a>
+        <p className="mt-3 text-xs text-muted">{t('Forgot your password? Ask your landlord to make you a new one.')}</p>
+        <p className="mt-2 text-xs text-muted">
+          <a href="/privacy" className="underline">
+            {t('How your information is used')}
+          </a>
         </p>
       </div>
 
       <button onClick={signOut} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-paper py-3.5 font-semibold text-forest-700 shadow-sm hover:bg-forest-100">
-        <LogOut size={18} /> Log out
+        <LogOut size={18} /> {t('Log out')}
       </button>
     </div>
   )
