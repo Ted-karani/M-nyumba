@@ -627,3 +627,32 @@ export async function uploadRepairPhoto(path, file) {
   if (!response.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'The photo could not be sent. Please try again.')
   return data
 }
+
+// ---------- M-PESA STATEMENT CHECK ----------
+
+// Send a form with a file and some text fields, like sendForm('/reconcile/preview', { file })
+export async function sendForm(path, fields) {
+  const form = new FormData()
+  Object.entries(fields).forEach(([name, value]) => (value instanceof File ? form.append(name, value, value.name) : form.append(name, value)))
+  const response = await fetch(`${API_URL}${path}`, { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: form })
+  // The login ran out: go back to the sign-in screen
+  if (response.status === 401) {
+    clearToken()
+    window.location.reload()
+    throw new Error('Please sign in again.')
+  }
+  let data = null
+  try {
+    data = await response.json()
+  } catch {
+    // No readable answer
+  }
+  if (!response.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'That did not work. Please try again.')
+  return data
+}
+// Look at a statement file and guess its columns
+export const previewStatement = (file) => sendForm('/reconcile/preview', { file })
+// Compare a statement with the payments recorded in EstateLoom
+export const analyzeStatement = (file, mapping) => sendForm('/reconcile/analyze', { file, mapping: JSON.stringify(mapping) })
+// Record payments from a statement: assignments look like [{ receipt, lease_id }]
+export const recordFromStatement = (file, mapping, assignments) => sendForm('/reconcile/record', { file, mapping: JSON.stringify(mapping), assignments: JSON.stringify(assignments) })

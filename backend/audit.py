@@ -91,6 +91,8 @@ RULES = [
     rule("POST", r"^/quick-setup/preview$", None),
     rule("POST", r"^/quick-setup/building$", "Set up a building with its units"),
     rule("POST", r"^/legal/accept$", "Accepted the Terms and Privacy Policy"),
+    rule("POST", r"^/reconcile/(preview|analyze)$", None),
+    rule("POST", r"^/reconcile/record$", "Recorded payments from an M-Pesa statement"),
     rule("PUT", r"^/tax/filings/\d{4}-\d{2}$", "Marked a month of rental income tax as filed"),
     rule("DELETE", r"^/tax/filings/\d{4}-\d{2}$", "Removed a rental income tax filing record"),
     rule("PUT", r"^/tax/settings$", "Changed the rental income tax settings"),

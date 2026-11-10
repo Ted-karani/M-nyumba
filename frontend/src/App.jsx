@@ -27,6 +27,7 @@ import RentTax from './pages/RentTax'
 import LateFees from './pages/LateFees'
 import Settlements from './pages/Settlements'
 import Settlement from './pages/Settlement'
+import Reconcile from './pages/Reconcile'
 import More from './pages/More'
 import Owing from './pages/Owing'
 import Expenses from './pages/Expenses'
@@ -162,6 +163,7 @@ function Screens() {
           <Route path="late-fees" element={<LateFees />} />
           <Route path="settlements" element={<Settlements />} />
           <Route path="settlements/:leaseId" element={<Settlement />} />
+          <Route path="reconcile" element={<Reconcile />} />
           <Route path="owing" element={<Owing />} />
           <Route path="listings" element={<Listings />} />
           <Route path="notices" element={<Notices />} />
