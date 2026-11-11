@@ -10,6 +10,7 @@ import { useT } from '../i18n'
 import { ADMIN_ITEMS, CARETAKER_ITEMS, OWNER_BAR, OWNER_SIDEBAR, TENANT_ITEMS } from '../nav'
 import { beforeSignOut } from '../offline/engine'
 import LanguageSwitch from './LanguageSwitch'
+import GettingStartedCard from './GettingStartedCard'
 import OfflineBar from './OfflineBar'
 import Wordmark from './Logo'
 
@@ -141,6 +142,7 @@ export default function Layout() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
+            {user.role === 'owner' && location.pathname === '/' && <GettingStartedCard />}
             <Outlet />
           </motion.div>
         </main>

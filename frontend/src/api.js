@@ -656,3 +656,8 @@ export const previewStatement = (file) => sendForm('/reconcile/preview', { file 
 export const analyzeStatement = (file, mapping) => sendForm('/reconcile/analyze', { file, mapping: JSON.stringify(mapping) })
 // Record payments from a statement: assignments look like [{ receipt, lease_id }]
 export const recordFromStatement = (file, mapping, assignments) => sendForm('/reconcile/record', { file, mapping: JSON.stringify(mapping), assignments: JSON.stringify(assignments) })
+
+// ---------- GETTING STARTED CHECKLIST ----------
+
+// Get the checklist, with each step ticked from the landlord's own data
+export const getGettingStarted = () => request('/getting-started')

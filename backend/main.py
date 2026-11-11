@@ -35,7 +35,7 @@ from security_models import UserTotp
 from routers import (
     properties, units, tenants, leases, billing, rent, utilities,
     maintenance, staff, caretakers, onboarding, quicksetup, reminders, expenses, reports,
-    documents, tasks, inspections, listings, portal, mpesa, admin, adminactivity, tax, latefees, settlements, demo, repairphotos, reconcile, legal, dataexport, closing, account, dashboard,
+    documents, tasks, inspections, listings, portal, mpesa, admin, adminactivity, tax, latefees, settlements, demo, repairphotos, reconcile, gettingstarted, legal, dataexport, closing, account, dashboard,
 )
 
 # Create all the tables in the database if they don't exist yet
@@ -158,6 +158,8 @@ app.include_router(repairphotos.staff_router)
 app.include_router(repairphotos.tenant_router)
 # Plug in the M-Pesa statement check endpoints
 app.include_router(reconcile.router)
+# Plug in the getting started checklist endpoint
+app.include_router(gettingstarted.router)
 # Plug in the account endpoints (change password, 2-step login, activity log)
 app.include_router(account.router)
 # Plug in the dashboard endpoint

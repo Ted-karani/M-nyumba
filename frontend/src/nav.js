@@ -15,6 +15,7 @@ import {
   Home,
   LayoutDashboard,
   LayoutGrid,
+  ListChecks,
   Megaphone,
   Newspaper,
   Receipt,
@@ -36,6 +37,7 @@ export const PAYMENTS = { to: '/payments', label: 'Payments', icon: Wallet }
 
 // Everything else lives under "More" (add new screens here)
 export const MORE_ITEMS = [
+  { to: '/getting-started', label: 'Getting started', icon: ListChecks, description: 'The steps that get EstateLoom working for you' },
   { to: '/quick-setup', label: 'Quick setup', icon: Sparkles, description: 'Add a whole building and all its units in a minute' },
   { to: '/owing', label: 'Who owes me', icon: BellRing, description: 'Remind everyone who is late, in a few taps' },
   { to: '/listings', label: 'Vacancy listings', icon: Megaphone, description: 'Advertise empty units with photos and a link' },
